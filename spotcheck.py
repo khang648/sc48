@@ -88,25 +88,30 @@ def process_image(image_name):
     result_list = list(range(48))
     area = list(range(48))
 
-    for i in range(len(sorted_contours1)):
-        cimg = np.zeros_like(gray_img)
-        cv2.drawContours(cimg, sorted_contours1, i, color = 255, thickness = -1)
-        pts = np.where(cimg == 255)
-        list_intensities.append(gray_img[pts[0], pts[1]])
-        sum_intensities.append(sum(list_intensities[i]))
-        area[i]= cv2.contourArea(sorted_contours1[i])
-        result_list[i] = round((sum_intensities[i])*50/69791)
-
-#     blurori_img = cv2.GaussianBlur(image.copy(), (33,33), 0) 
-#     hsv_img = cv2.cvtColor(blurori_img, cv2.COLOR_BGR2HSV)
 #     for i in range(len(sorted_contours1)):
 #         cimg = np.zeros_like(gray_img)
 #         cv2.drawContours(cimg, sorted_contours1, i, color = 255, thickness = -1)
 #         pts = np.where(cimg == 255)
-#         list_intensities.append(hsv_img[pts[0], pts[1]][2])
+#         list_intensities.append(gray_img[pts[0], pts[1]])
 #         sum_intensities.append(sum(list_intensities[i]))
 #         area[i]= cv2.contourArea(sorted_contours1[i])
 #         result_list[i] = round((sum_intensities[i])*50/69791)
+
+    blur1_img = cv2.GaussianBlur(image.copy(), (33,33), 0) 
+    hsv_img = cv2.cvtColor(blur1_img, cv2.COLOR_BGR2HSV)
+    list_hsvvalue = []
+    list_index = list(range(48))
+    for i in range(len(sorted_contours1)):
+        list_index[i] = []
+        cimg = np.zeros_like(gray_img)
+        cv2.drawContours(cimg, sorted_contours1, i, color = 255, thickness = -1)
+        pts = np.where(cimg == 255)
+        list_hsvvalue.append(hsv_img[pts[0], pts[1]])
+        for j in range(len(list_hsvvalue[i])):
+            list_index[i].append(list_hsvvalue[i][j][2])
+        list_intensities.append(sum(list_index[i]))
+        area[i]= cv2.contourArea(sorted_contours1[i])
+        result_list[i] = round((list_intensities[i])*45/59768)
 
     for i in range(len(sorted_contours1)):
         if ((i!=0) and ((i+1)%6==0)):
