@@ -14,6 +14,7 @@ import math
 from fractions import Fraction
 from threading import *
 import os
+from openpyxl import Workbook
 
 ######################################################### Khởi tạo Main Window ##############################################################
 root = Tk()
@@ -483,6 +484,7 @@ def analysis():
                 sleep(2)
                 camera.shutter_speed = 6000000
                 camera.exposure_mode = 'off'
+
                 global path1
                 output1 = path1 + "/T1.jpg"
                 camera.capture(output1)
@@ -490,25 +492,63 @@ def analysis():
                 send_data = 'C'
                 ser.write(send_data.encode())
                 print('Capture done!')
+
                 t1_result, t1_image, t1_start, t1_end = process_image(output1)
+
                 global path2
                 output = path2 + "/T1.jpg"
                 cv2.imwrite(output, t1_image)
+
                 t1_analysis = Image.open(output)
-                t1_crop = t1_analysis.crop((t1_start[0]-7,t1_start[1]-7,t1_end[0]+7,t1_end[1]+7))
-                
+                t1_crop = t1_analysis.crop((t1_start[0]-7,t1_start[1]-7,t1_end[0]+7,t1_end[1]+7))   
                 crop_width, crop_height = t1_crop.size
                 scale_percent = 95
                 width = int(crop_width * scale_percent / 100)
                 height = int(crop_height * scale_percent / 100)
                 display_img = t1_crop.resize((width,height))
-                t1_display = ImageTk.PhotoImage(display_img)
-                
+                t1_display = ImageTk.PhotoImage(display_img)                
                 t1_label = Label(t1_labelframe, image=t1_display)
                 t1_label.image = t1_display
                 t1_label.place(x=0,y=0)
                 root.update()
-        
+
+                sheet["A2"] = "A"
+               	sheet["A3"] = "B"
+               	sheet["A4"] = "C"
+               	sheet["A5"] = "D"
+               	sheet["A6"] = "E"
+               	sheet["A7"] = "F"
+               	sheet["A8"] = "G"
+               	sheet["A9"] = "H"
+               	sheet["B1"] = "1"
+               	sheet["C1"] = "2"
+               	sheet["D1"] = "3"
+               	sheet["E1"] = "4"
+               	sheet["F1"] = "5"
+               	sheet["G1"] = "6"
+                for i in range(0,48):
+                	if(i<6):
+	                    pos = str(chr(65+i)) + "1" 
+	                if(i>=6 and i<12):
+	                    pos = str(chr(65+i-5)) + "2"
+	                if(i>=12 and i<18):
+	                    pos = str(chr(65+i-11)) + "3"
+	                if(i>=18 and i<24):
+	                    pos = str(chr(65+i-17)) + "4"
+	                if(i>=24 and i<30):
+	                    pos = str(chr(65+i-23)) + "5"
+	                if(i>=30 and i<36):
+	                    pos = str(chr(65+i-29)) + "6"
+	                if(i>=36 and i<42):
+	                    pos = str(chr(65+i-35)) + "7"
+	                if(i>=42):
+	                    pos = str(chr(65+i-41)) + "8"
+
+	                sheet[pos] = t1_resul[i]
+
+	            global path3
+	            workbook.save(path3+"/T1.xlsx")
+
             if(receive_data=='C2'):
                 print("Data received:", receive_data)
                 camera = PiCamera(framerate=Fraction(1,6), sensor_mode=3)
@@ -541,6 +581,43 @@ def analysis():
                 t2_label.image = t2_display
                 t2_label.place(x=0,y=0)
                 root.update()
+
+                sheet["A2"] = "A"
+               	sheet["A3"] = "B"
+               	sheet["A4"] = "C"
+               	sheet["A5"] = "D"
+               	sheet["A6"] = "E"
+               	sheet["A7"] = "F"
+               	sheet["A8"] = "G"
+               	sheet["A9"] = "H"
+               	sheet["B1"] = "1"
+               	sheet["C1"] = "2"
+               	sheet["D1"] = "3"
+               	sheet["E1"] = "4"
+               	sheet["F1"] = "5"
+               	sheet["G1"] = "6"
+                for i in range(0,48):
+                	if(i<6):
+	                    pos = str(chr(65+i)) + "1" 
+	                if(i>=6 and i<12):
+	                    pos = str(chr(65+i-5)) + "2"
+	                if(i>=12 and i<18):
+	                    pos = str(chr(65+i-11)) + "3"
+	                if(i>=18 and i<24):
+	                    pos = str(chr(65+i-17)) + "4"
+	                if(i>=24 and i<30):
+	                    pos = str(chr(65+i-23)) + "5"
+	                if(i>=30 and i<36):
+	                    pos = str(chr(65+i-29)) + "6"
+	                if(i>=36 and i<42):
+	                    pos = str(chr(65+i-35)) + "7"
+	                if(i>=42):
+	                    pos = str(chr(65+i-41)) + "8"
+
+	                sheet[pos] = t2_resul[i]
+
+	            global path3
+	            workbook.save(path3+"/T2.xlsx")
     
             if(receive_data=='C3'):
                 print("Data received:", receive_data)
@@ -577,6 +654,43 @@ def analysis():
                 pause_button.place_forget()
                 cancel_button.place_forget()
                 temp_label.place_forget()
+
+                sheet["A2"] = "A"
+               	sheet["A3"] = "B"
+               	sheet["A4"] = "C"
+               	sheet["A5"] = "D"
+               	sheet["A6"] = "E"
+               	sheet["A7"] = "F"
+               	sheet["A8"] = "G"
+               	sheet["A9"] = "H"
+               	sheet["B1"] = "1"
+               	sheet["C1"] = "2"
+               	sheet["D1"] = "3"
+               	sheet["E1"] = "4"
+               	sheet["F1"] = "5"
+               	sheet["G1"] = "6"
+                for i in range(0,48):
+                	if(i<6):
+	                    pos = str(chr(65+i)) + "1" 
+	                if(i>=6 and i<12):
+	                    pos = str(chr(65+i-5)) + "2"
+	                if(i>=12 and i<18):
+	                    pos = str(chr(65+i-11)) + "3"
+	                if(i>=18 and i<24):
+	                    pos = str(chr(65+i-17)) + "4"
+	                if(i>=24 and i<30):
+	                    pos = str(chr(65+i-23)) + "5"
+	                if(i>=30 and i<36):
+	                    pos = str(chr(65+i-29)) + "6"
+	                if(i>=36 and i<42):
+	                    pos = str(chr(65+i-35)) + "7"
+	                if(i>=42):
+	                    pos = str(chr(65+i-41)) + "8"
+
+	                sheet[pos] = t3_resul[i]
+
+	            global path3
+	            workbook.save(path3+"/T3.xlsx")
                 
                 def viewresult_click():
                     viewresult_button.place_forget()
@@ -691,6 +805,10 @@ path2 = "/"
 path3 = "/"
 path4 = "/"
 path5 = "/"
+
+######################################################### Khoi tao excel ###############################################################
+workbook = Workbook()
+sheet = workbook.active
 
 ########################################################### Serial init ################################################################ 
 # ser = serial.Serial('/dev/ttyACM0', 9600)
