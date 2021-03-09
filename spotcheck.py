@@ -88,30 +88,30 @@ def process_image(image_name):
     result_list = list(range(48))
     area = list(range(48))
 
-#     for i in range(len(sorted_contours1)):
-#         cimg = np.zeros_like(gray_img)
-#         cv2.drawContours(cimg, sorted_contours1, i, color = 255, thickness = -1)
-#         pts = np.where(cimg == 255)
-#         list_intensities.append(gray_img[pts[0], pts[1]])
-#         sum_intensities.append(sum(list_intensities[i]))
-#         area[i]= cv2.contourArea(sorted_contours1[i])
-#         result_list[i] = round((sum_intensities[i])*50/69791)
-
-    blur1_img = cv2.GaussianBlur(image.copy(), (33,33), 0) 
-    hsv_img = cv2.cvtColor(blur1_img, cv2.COLOR_BGR2HSV)
-    list_hsvvalue = []
-    list_index = list(range(48))
     for i in range(len(sorted_contours1)):
-        list_index[i] = []
         cimg = np.zeros_like(gray_img)
         cv2.drawContours(cimg, sorted_contours1, i, color = 255, thickness = -1)
         pts = np.where(cimg == 255)
-        list_hsvvalue.append(hsv_img[pts[0], pts[1]])
-        for j in range(len(list_hsvvalue[i])):
-            list_index[i].append(list_hsvvalue[i][j][2])
-        list_intensities.append(sum(list_index[i]))
+        list_intensities.append(gray_img[pts[0], pts[1]])
+        sum_intensities.append(sum(list_intensities[i]))
         area[i]= cv2.contourArea(sorted_contours1[i])
-        result_list[i] = round((list_intensities[i])*45/59768)
+        result_list[i] = round((sum_intensities[i])*50/69791)
+
+#     blur1_img = cv2.GaussianBlur(image.copy(), (33,33), 0) 
+#     hsv_img = cv2.cvtColor(blur1_img, cv2.COLOR_BGR2HSV)
+#     list_hsvvalue = []
+#     list_index = list(range(48))
+#     for i in range(len(sorted_contours1)):
+#         list_index[i] = []
+#         cimg = np.zeros_like(gray_img)
+#         cv2.drawContours(cimg, sorted_contours1, i, color = 255, thickness = -1)
+#         pts = np.where(cimg == 255)
+#         list_hsvvalue.append(hsv_img[pts[0], pts[1]])
+#         for j in range(len(list_hsvvalue[i])):
+#             list_index[i].append(list_hsvvalue[i][j][2])
+#         list_intensities.append(sum(list_index[i]))
+#         area[i]= cv2.contourArea(sorted_contours1[i])
+#         result_list[i] = round((list_intensities[i])*45/59768)
 
     for i in range(len(sorted_contours1)):
         if ((i!=0) and ((i+1)%6==0)):
@@ -310,13 +310,12 @@ def scanposition():
     next_button.place(x=650,y=350)
 
     global ser
-    send_data = "P"+"\r"
-    ser.write(send_data.encode()) 
-    global dt
+    send_data = 'P'
+    ser.write(send_data.encode())
     #global ser
 
     if(ser.in_waiting>0):
-        receive_data = ser.readline().decode('ascii').rstrip()
+        receive_data = ser.readline().decode('utf-8').rstrip()
         print("Data received:", receive_data)
         scanposition_progressbar['value'] = 5
         root.update_idletasks()
@@ -443,18 +442,30 @@ def analysis():
     root.update()
     
     global t1_set, t2_set, t3_set
-    send_data = "t"+t1_set+t2_set+t3_set+"z"+"\r"
+    send_data = "t"+ t1_set + "," + t2_set + "," + t3_set + "z"
     global ser
     ser.write(send_data.encode())
+    t0 = time.time()
     
     #global ser
+    global wait
     if(ser.in_waiting>0):
         receive_data = ser.readline().decode('ascii').rstrip()
-        print("Data received:", receive_data)
+        print("Data received:", receive_data)        
         if(receive_data=='Y'):
-            global wait
             wait = 1
-    
+    while(wait != 1):
+        sleep(3)
+        send_data = "t"+ t1_set + "," + t2_set + "," + t3_set + "z"
+        ser.flushOutput()
+        ser.write(send_data.encode())
+        print("send data again:", send_data)
+        if(ser.in_waiting>0):
+            receive_data = ser.readline().decode('ascii').rstrip()
+            print("Data received:", receive_data)        
+            if(receive_data=='Y'):   
+                wait = 1
+                break
     while(wait==1):
         if(ser.in_waiting>0):
             receive_data = ser.readline().decode('ascii').rstrip()
@@ -476,6 +487,8 @@ def analysis():
                 output1 = path1 + "/T1.jpg"
                 camera.capture(output1)
                 camera.close()
+                send_data = 'C'
+                ser.write(send_data.encode())
                 print('Capture done!')
                 t1_result, t1_image, t1_start, t1_end = process_image(output1)
                 global path2
@@ -507,6 +520,8 @@ def analysis():
                 output2 = path1 + "/T2.jpg"
                 camera.capture(output2)
                 camera.close()
+                send_data = 'C'
+                ser.write(send_data.encode())
                 print('Capture done!')
                 t2_result, t2_image, t2_start, t2_end = process_image(output2)
                 output = path2 + "/T2.jpg"
@@ -538,6 +553,8 @@ def analysis():
                 output3 = path1 + "/T3.jpg"
                 camera.capture(output3)
                 camera.close()
+                send_data = 'C'
+                ser.write(send_data.encode())
                 print('Capture done!')
                 t3_result, t3_image, t3_start, t3_end = process_image(output3)
                 output = path2 + "/T3.jpg"
@@ -676,7 +693,15 @@ path4 = "/"
 path5 = "/"
 
 ########################################################### Serial init ################################################################ 
-ser = serial.Serial('/dev/ttyACM0', 9600) 
+# ser = serial.Serial('/dev/ttyACM0', 9600)
+ser = serial.Serial(
+    port = '/dev/serial0',
+    baudrate = 115200,
+    parity = serial.PARITY_NONE,
+    stopbits = serial.STOPBITS_ONE,
+    bytesize = serial.EIGHTBITS,
+    timeout = 1
+)
 
 ############################################################## Loop ####################################################################
 while True:
