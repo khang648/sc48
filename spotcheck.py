@@ -15,6 +15,7 @@ from fractions import Fraction
 from threading import *
 import os
 from openpyxl import Workbook
+#from gpiozero import LED
 
 ######################################################### Khởi tạo Main Window ##############################################################
 root = Tk()
@@ -320,7 +321,6 @@ def scanposition():
         print("Data received:", receive_data)
         scanposition_progressbar['value'] = 5
         root.update_idletasks()
-
         if(receive_data=='C'):
             global wait
             wait = 1
@@ -345,7 +345,31 @@ def scanposition():
             global path5
             path5 = os.path.join(path0,"Temperature program")
             os.mkdir(path5)
-            
+    while(wait!=1):
+        scanposition_progressbar['value'] = 1
+        if(ser.in_waiting>0):
+            receive_data = ser.readline().decode('utf-8').rstrip()
+            print("Data received:", receive_data)
+            scanposition_progressbar['value'] = 5
+            root.update_idletasks()
+            if(receive_data=='C'):
+                scanposition_progressbar['value'] = 20
+                root.update_idletasks()
+                directory = strftime("COVID19 %y-%m-%d %H.%M.%S")
+                path0 = os.path.join("/home/pi/Desktop/spotcheck result",directory)
+                os.mkdir(path0)
+                path1 = os.path.join(path0,"Original image")
+                os.mkdir(path1)
+                path2 = os.path.join(path0,"Processed image")
+                os.mkdir(path2)
+                path3 = os.path.join(path0,"Result Table")
+                os.mkdir(path3)
+                path4 = os.path.join(path0,"Sample image")
+                os.mkdir(path4)
+                path5 = os.path.join(path0,"Temperature program")
+                os.mkdir(path5)
+                wait = 1
+                break;
     while(wait==1):
         camera = PiCamera(framerate=Fraction(1,6), sensor_mode=3)
         camera.rotation = 180
@@ -431,12 +455,25 @@ def analysis():
     temp_label.place(x=340,y=350)
 
     def cancel_click():
+        global ser
         msgbox = messagebox.askquestion('Cancel the process','Are you want to cancel the analysis ?', icon = 'warning')
         if(msgbox=='yes'):
+            send_data ='S'
+            ser.write(send_data.encode())
             analysis_labelframe.place_forget()
             mainscreen()       
-        
-    pause_button = Button(scanposition_labelframe, bg="lavender", text="Pause", height=2, width=10)
+    
+    def pause_click():
+        global ser
+        if(pause_button['text']=='Pause'):
+            send_data ='P'
+            ser.write(send_data.encode())
+            pause_button['text']= 'Continue'
+        else:
+            send_data ='R'
+            ser.write(send_data.encode())
+            pause_button['text']= 'Pause'
+    pause_button = Button(scanposition_labelframe, bg="lavender", text="Pause", height=2, width=10, command = pause_click)
     pause_button.place(x=40,y=350)
     cancel_button = Button(scanposition_labelframe, bg="lavender", text="Cancel", height=2, width=10, command=cancel_click)
     cancel_button.place(x=650,y=350)
@@ -447,7 +484,7 @@ def analysis():
     global ser
     ser.write(send_data.encode())
     t0 = time.time()
-    
+    sleep(2)
     #global ser
     global wait
     if(ser.in_waiting>0):
@@ -455,18 +492,25 @@ def analysis():
         print("Data received:", receive_data)        
         if(receive_data=='Y'):
             wait = 1
-    while(wait != 1):
-        sleep(3)
-        send_data = "t"+ t1_set + "," + t2_set + "," + t3_set + "z"
-        ser.flushOutput()
-        ser.write(send_data.encode())
-        print("send data again:", send_data)
+    while(wait!=1):
         if(ser.in_waiting>0):
             receive_data = ser.readline().decode('ascii').rstrip()
             print("Data received:", receive_data)        
-            if(receive_data=='Y'):   
+            if(receive_data=='Y'):
                 wait = 1
                 break
+        
+#         sleep(3)
+#         send_data = "t"+ t1_set + "," + t2_set + "," + t3_set + "z"
+#         ser.flushOutput()
+#         ser.write(send_data.encode())
+#         print("send data again:", send_data)
+#         if(ser.in_waiting>0):
+#             receive_data = ser.readline().decode('ascii').rstrip()
+#             print("Data received:", receive_data)        
+#             if(receive_data=='Y'):   
+#                 wait = 1
+#                 break
     while(wait==1):
         if(ser.in_waiting>0):
             receive_data = ser.readline().decode('ascii').rstrip()
@@ -513,41 +557,41 @@ def analysis():
                 root.update()
 
                 sheet["A2"] = "A"
-               	sheet["A3"] = "B"
-               	sheet["A4"] = "C"
-               	sheet["A5"] = "D"
-               	sheet["A6"] = "E"
-               	sheet["A7"] = "F"
-               	sheet["A8"] = "G"
-               	sheet["A9"] = "H"
-               	sheet["B1"] = "1"
-               	sheet["C1"] = "2"
-               	sheet["D1"] = "3"
-               	sheet["E1"] = "4"
-               	sheet["F1"] = "5"
-               	sheet["G1"] = "6"
+                sheet["A3"] = "B"
+                sheet["A4"] = "C"
+                sheet["A5"] = "D"
+                sheet["A6"] = "E"
+                sheet["A7"] = "F"
+                sheet["A8"] = "G"
+                sheet["A9"] = "H"
+                sheet["B1"] = "1"
+                sheet["C1"] = "2"
+                sheet["D1"] = "3"
+                sheet["E1"] = "4"
+                sheet["F1"] = "5"
+                sheet["G1"] = "6"
                 for i in range(0,48):
-                	if(i<6):
-	                    pos = str(chr(65+i)) + "1" 
-	                if(i>=6 and i<12):
-	                    pos = str(chr(65+i-5)) + "2"
-	                if(i>=12 and i<18):
-	                    pos = str(chr(65+i-11)) + "3"
-	                if(i>=18 and i<24):
-	                    pos = str(chr(65+i-17)) + "4"
-	                if(i>=24 and i<30):
-	                    pos = str(chr(65+i-23)) + "5"
-	                if(i>=30 and i<36):
-	                    pos = str(chr(65+i-29)) + "6"
-	                if(i>=36 and i<42):
-	                    pos = str(chr(65+i-35)) + "7"
-	                if(i>=42):
-	                    pos = str(chr(65+i-41)) + "8"
-
-	                sheet[pos] = t1_resul[i]
-
-	            global path3
-	            workbook.save(path3+"/T1.xlsx")
+                    if(i<6):
+                        pos = str(chr(65+i+1)) + "2"
+                    if(i>=6 and i<12):
+                        pos = str(chr(65+i-5)) + "3"
+                    if(i>=12 and i<18):
+                        pos = str(chr(65+i-11)) + "4"
+                    if(i>=18 and i<24):
+                        pos = str(chr(65+i-17)) + "5"
+                    if(i>=24 and i<30):
+                        pos = str(chr(65+i-23)) + "6"
+                    if(i>=30 and i<36):
+                        pos = str(chr(65+i-29)) + "7"
+                    if(i>=36 and i<42):
+                        pos = str(chr(65+i-35)) + "8"
+                    if(i>=42):
+                        pos = str(chr(65+i-41)) + "9"
+                    
+                    sheet[pos] = t1_result[i]
+                
+                global path3
+                workbook.save(path3+"/T1.xlsx")
 
             if(receive_data=='C2'):
                 print("Data received:", receive_data)
@@ -583,41 +627,40 @@ def analysis():
                 root.update()
 
                 sheet["A2"] = "A"
-               	sheet["A3"] = "B"
-               	sheet["A4"] = "C"
-               	sheet["A5"] = "D"
-               	sheet["A6"] = "E"
-               	sheet["A7"] = "F"
-               	sheet["A8"] = "G"
-               	sheet["A9"] = "H"
-               	sheet["B1"] = "1"
-               	sheet["C1"] = "2"
-               	sheet["D1"] = "3"
-               	sheet["E1"] = "4"
-               	sheet["F1"] = "5"
-               	sheet["G1"] = "6"
+                sheet["A3"] = "B"
+                sheet["A4"] = "C"
+                sheet["A5"] = "D"
+                sheet["A6"] = "E"
+                sheet["A7"] = "F"
+                sheet["A8"] = "G"
+                sheet["A9"] = "H"
+                sheet["B1"] = "1"
+                sheet["C1"] = "2"
+                sheet["D1"] = "3"
+                sheet["E1"] = "4"
+                sheet["F1"] = "5"
+                sheet["G1"] = "6"
                 for i in range(0,48):
-                	if(i<6):
-	                    pos = str(chr(65+i)) + "1" 
-	                if(i>=6 and i<12):
-	                    pos = str(chr(65+i-5)) + "2"
-	                if(i>=12 and i<18):
-	                    pos = str(chr(65+i-11)) + "3"
-	                if(i>=18 and i<24):
-	                    pos = str(chr(65+i-17)) + "4"
-	                if(i>=24 and i<30):
-	                    pos = str(chr(65+i-23)) + "5"
-	                if(i>=30 and i<36):
-	                    pos = str(chr(65+i-29)) + "6"
-	                if(i>=36 and i<42):
-	                    pos = str(chr(65+i-35)) + "7"
-	                if(i>=42):
-	                    pos = str(chr(65+i-41)) + "8"
-
-	                sheet[pos] = t2_resul[i]
-
-	            global path3
-	            workbook.save(path3+"/T2.xlsx")
+                    if(i<6):
+                        pos = str(chr(65+i+1)) + "2"
+                    if(i>=6 and i<12):
+                        pos = str(chr(65+i-5)) + "3"
+                    if(i>=12 and i<18):
+                        pos = str(chr(65+i-11)) + "4"
+                    if(i>=18 and i<24):
+                        pos = str(chr(65+i-17)) + "5"
+                    if(i>=24 and i<30):
+                        pos = str(chr(65+i-23)) + "6"
+                    if(i>=30 and i<36):
+                        pos = str(chr(65+i-29)) + "7"
+                    if(i>=36 and i<42):
+                        pos = str(chr(65+i-35)) + "8"
+                    if(i>=42):
+                        pos = str(chr(65+i-41)) + "9"
+                    
+                    sheet[pos] = t2_result[i]
+                
+                workbook.save(path3+"/T2.xlsx")
     
             if(receive_data=='C3'):
                 print("Data received:", receive_data)
@@ -656,41 +699,40 @@ def analysis():
                 temp_label.place_forget()
 
                 sheet["A2"] = "A"
-               	sheet["A3"] = "B"
-               	sheet["A4"] = "C"
-               	sheet["A5"] = "D"
-               	sheet["A6"] = "E"
-               	sheet["A7"] = "F"
-               	sheet["A8"] = "G"
-               	sheet["A9"] = "H"
-               	sheet["B1"] = "1"
-               	sheet["C1"] = "2"
-               	sheet["D1"] = "3"
-               	sheet["E1"] = "4"
-               	sheet["F1"] = "5"
-               	sheet["G1"] = "6"
+                sheet["A3"] = "B"
+                sheet["A4"] = "C"
+                sheet["A5"] = "D"
+                sheet["A6"] = "E"
+                sheet["A7"] = "F"
+                sheet["A8"] = "G"
+                sheet["A9"] = "H"
+                sheet["B1"] = "1"
+                sheet["C1"] = "2"
+                sheet["D1"] = "3"
+                sheet["E1"] = "4"
+                sheet["F1"] = "5"
+                sheet["G1"] = "6"
                 for i in range(0,48):
-                	if(i<6):
-	                    pos = str(chr(65+i)) + "1" 
-	                if(i>=6 and i<12):
-	                    pos = str(chr(65+i-5)) + "2"
-	                if(i>=12 and i<18):
-	                    pos = str(chr(65+i-11)) + "3"
-	                if(i>=18 and i<24):
-	                    pos = str(chr(65+i-17)) + "4"
-	                if(i>=24 and i<30):
-	                    pos = str(chr(65+i-23)) + "5"
-	                if(i>=30 and i<36):
-	                    pos = str(chr(65+i-29)) + "6"
-	                if(i>=36 and i<42):
-	                    pos = str(chr(65+i-35)) + "7"
-	                if(i>=42):
-	                    pos = str(chr(65+i-41)) + "8"
-
-	                sheet[pos] = t3_resul[i]
-
-	            global path3
-	            workbook.save(path3+"/T3.xlsx")
+                    if(i<6):
+                        pos = str(chr(65+i+1)) + "2"
+                    if(i>=6 and i<12):
+                        pos = str(chr(65+i-5)) + "3"
+                    if(i>=12 and i<18):
+                        pos = str(chr(65+i-11)) + "4"
+                    if(i>=18 and i<24):
+                        pos = str(chr(65+i-17)) + "5"
+                    if(i>=24 and i<30):
+                        pos = str(chr(65+i-23)) + "6"
+                    if(i>=30 and i<36):
+                        pos = str(chr(65+i-29)) + "7"
+                    if(i>=36 and i<42):
+                        pos = str(chr(65+i-35)) + "8"
+                    if(i>=42):
+                        pos = str(chr(65+i-41)) + "9"
+                    
+                    sheet[pos] = t3_result[i]
+                
+                workbook.save(path3+"/T3.xlsx")
                 
                 def viewresult_click():
                     viewresult_button.place_forget()
@@ -812,6 +854,14 @@ sheet = workbook.active
 
 ########################################################### Serial init ################################################################ 
 # ser = serial.Serial('/dev/ttyACM0', 9600)
+
+# from gpiozero import LED
+# tx = LED(14)
+# rx = LED(15)
+# rx.off()
+# tx.off()
+# sleep(1)
+
 ser = serial.Serial(
     port = '/dev/serial0',
     baudrate = 115200,
@@ -820,7 +870,6 @@ ser = serial.Serial(
     bytesize = serial.EIGHTBITS,
     timeout = 1
 )
-
 ############################################################## Loop ####################################################################
 while True:
     mainscreen()  
