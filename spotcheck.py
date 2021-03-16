@@ -99,7 +99,38 @@ def process_image(image_name):
         sum_intensities.append(sum(list_intensities[i]))
         area[i]= cv2.contourArea(sorted_contours1[i])
         result_list[i] = round((sum_intensities[i])*50/69791)
-
+# new led   
+#     for i in range(len(sorted_contours1)):
+#         if(i==0 or i==1):
+#             result_list[i] *= 1.4
+#         if(i==2 or i==4 or i==11 or i==41 or i==46 or i==47):
+#             result_list[i] *= 1.3
+#         if(i==3 or i==6 or i==7 or i==12 or i==13 or i==17 or i==18 or i==19 or i==23
+#            or i==24 or i==25 or i==29 or i==30 or i==31 or i==35 or i==36 or i==37
+#            or i==40 or i==42 or i==43 or i==44 or i==45):
+#             result_list[i] *= 1.2
+#         if(i==8 or i==9 or i==10 or i==14 or i==15 or i==16 or i==22 or i==28
+#            or i==32 or i==33 or i==34 or i==38 or i==39):
+#             result_list[i] *= 1.1
+#         if(i==5):
+#             result_list[i] *= 1.5
+    
+# new led:
+    for i in range(len(sorted_contours1)):
+        if(i==0 or i==1 or i==4 or i==11):
+            result_list[i] *= 1.24
+        if(i==2 or i==3 or i==7 or i==6 or i==12 or i==38 or i==46 or i==47):
+            result_list[i] *= 1.17
+        if(i==5):
+            result_list[i] *= 1.4
+        if(i==9 or i==10 or i==13 or i==16 or i==17 or i==18 or i==23
+           or i==30 or i==31 or i==36 or i==37 or i==39 or i==40 or i==41
+           or i==42 or i==43 or i==44 or i==45):
+            result_list[i] *= 1.11
+        if(i==14 or i==15 or i==19 or i==22 or i==24 or i==29 or i==32
+           or i==33 or i==34):
+            result_list[i] *= 1.05
+            
 #     blur1_img = cv2.GaussianBlur(image.copy(), (33,33), 0) 
 #     hsv_img = cv2.cvtColor(blur1_img, cv2.COLOR_BGR2HSV)
 #     list_hsvvalue = []
@@ -285,6 +316,7 @@ def settemp():
  
 ##################################################### Giao diện định vị mẫu ############################################################   
 def scanposition():
+    
     global scanpostion_labelframe
     scanposition_labelframe = LabelFrame(root, bg='white', width=850, height=417)
     scanposition_labelframe.place(x=0,y=0)
@@ -313,6 +345,8 @@ def scanposition():
     next_button.place(x=650,y=350)
 
     global ser
+    ser.flushInput()
+    ser.flushOutput()
     send_data = 'P'
     ser.write(send_data.encode())
     #global ser
@@ -484,19 +518,21 @@ def analysis():
     global t1_set, t2_set, t3_set
     send_data = "t"+ t1_set + "," + t2_set + "," + t3_set + "z"
     global ser
+    ser.flushInput()
+    ser.flushOutput()
     ser.write(send_data.encode())
     t0 = time.time()
     sleep(2)
     #global ser
     global wait
     if(ser.in_waiting>0):
-        receive_data = ser.readline().decode('ascii').rstrip()
+        receive_data = ser.readline().decode('utf-8').rstrip()
         print("Data received:", receive_data)        
         if(receive_data=='Y'):
             wait = 1
     while(wait!=1):
         if(ser.in_waiting>0):
-            receive_data = ser.readline().decode('ascii').rstrip()
+            receive_data = ser.readline().decode('utf-8').rstrip()
             print("Data received:", receive_data)        
             if(receive_data=='Y'):
                 wait = 1
@@ -515,7 +551,7 @@ def analysis():
 #                 break
     while(wait==1):
         if(ser.in_waiting>0):
-            receive_data = ser.readline().decode('ascii').rstrip()
+            receive_data = ser.readline().decode('utf-8').rstrip()
             #print("Data received:", receive_data)
             if(receive_data!='C1' and receive_data!='C2' and receive_data!='C3'):
                 print("Data received:", receive_data)
