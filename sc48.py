@@ -63,6 +63,8 @@ path4 = "/"
 path5 = "/"
 foldername = ""
 samples = 0
+createclicked = 0
+directory_old = ""
 
 ########################################################### Sắp xếp contours ###############################################################
 def sorting_y(contour):
@@ -161,7 +163,7 @@ def process_image(image_name):
         if(i==0 or i==1 or i==4 or i==11):
             result_list[i] = round(result_list[i]*1.24)
         if(i==2 or i==3 or i==7 or i==6 or i==12 or i==38 or i==46 or i==47):
-            result_list[i] = round(result_list[i]*1.27)
+            result_list[i] = round(result_list[i]*1.17)
         if(i==5):
             result_list[i] = round(result_list[i]*1.4)
         if(i==9 or i==10 or i==13 or i==16 or i==17 or i==18 or i==23
@@ -171,7 +173,10 @@ def process_image(image_name):
         if(i==14 or i==15 or i==19 or i==22 or i==24 or i==29 or i==32
            or i==33 or i==34):
             result_list[i] = round(result_list[i]*1.05)
-
+    
+    for i in range(len(sorted_contours1)):
+        if(result_list[i]>99):
+            result_list[i]=99
 #     blur1_img = cv2.GaussianBlur(image.copy(), (33,33), 0) 
 #     hsv_img = cv2.cvtColor(blur1_img, cv2.COLOR_BGR2HSV)
 #     list_hsvvalue = []
@@ -187,6 +192,7 @@ def process_image(image_name):
 #         list_intensities.append(sum(list_index[i]))
 #         area[i]= cv2.contourArea(sorted_contours1[i])
 #         result_list[i] = round((list_intensities[i])*45/59768)
+
 
     for i in range(len(sorted_contours1)):
         if ((i!=0) and ((i+1)%6==0)):
@@ -212,7 +218,7 @@ def process_image(image_name):
 def mainscreen():
     buttonFont = font.Font(family='Helvetica', size=10, weight='bold')
     global mainscreen_labelframe
-    mainscreen_labelframe = LabelFrame(root, bg='white', width=1024, height=600)
+    mainscreen_labelframe = LabelFrame(root, bg='white', width=800, height=600)
     mainscreen_labelframe.place(x=0,y=0)
     sidebar_labelframe = LabelFrame(mainscreen_labelframe, bg='dodger blue', width=170, height=478)
     sidebar_labelframe.place(x=0,y=0)
@@ -223,7 +229,7 @@ def mainscreen():
         home_canvas['bg'] = 'white'
         covid19_canvas['bg'] = 'dodger blue'
         tb_canvas['bg'] = 'dodger blue'
-        viewresult_canvas['bg'] = 'dodger blue'
+#         viewresult_canvas['bg'] = 'dodger blue'
         
         global covid19clicked
         covid19clicked = 0
@@ -248,17 +254,21 @@ def mainscreen():
             os.system("sudo shutdown -h now")
         def restart_click():
             os.system("sudo shutdown -r now")
-        shutdown_button = Button(homemc_labelframe, fg='white', activebackground="red", font=('Courier','13','bold'), bg="red3", text="SHUTDOWN", height=4, width=11, borderwidth=0, command=shutdown_click)
-        shutdown_button.place(x=159,y=370)
-        restart_button = Button(homemc_labelframe, fg='white', activebackground="lawn green", font=('Courier','13','bold'), bg="green", text="RESTART", height=4, width=11, borderwidth=0, command=restart_click)
-        restart_button.place(x=319,y=370)
+        def exit_click():
+            root.destroy()
+        exit_button = Button(homemc_labelframe, fg='white', activebackground="dodger blue", font=('Courier','13','bold'), bg="blue4", text="EXIT", height=3, width=9, borderwidth=0, command=exit_click)
+        exit_button.place(x=120,y=370)
+        shutdown_button = Button(homemc_labelframe, fg='white', activebackground="red", font=('Courier','13','bold'), bg="red3", text="SHUTDOWN", height=3, width=9, borderwidth=0, command=shutdown_click)
+        shutdown_button.place(x=250,y=370)
+        restart_button = Button(homemc_labelframe, fg='white', activebackground="lawn green", font=('Courier','13','bold'), bg="green", text="RESTART", height=3, width=9, borderwidth=0, command=restart_click)
+        restart_button.place(x=380,y=370)
             
     def covid19_click():
         root.attributes('-fullscreen', True)
         home_canvas['bg'] = 'dodger blue'
         covid19_canvas['bg'] = 'white'
         tb_canvas['bg'] = 'dodger blue'
-        viewresult_canvas['bg'] = 'dodger blue'
+#         viewresult_canvas['bg'] = 'dodger blue'
         
         global covid19clicked
         covid19clicked = 1
@@ -267,10 +277,21 @@ def mainscreen():
         
         covid19mc_labelframe = LabelFrame(mainscreen_labelframe, bg='white', width=624, height=478)
         covid19mc_labelframe.place(x=172,y=0)
-        enterframe_labelframe = LabelFrame(covid19mc_labelframe, bg='white', width=480, height=145)
-        enterframe_labelframe.place(x=70,y=70)
-        foldername_label = Label(covid19mc_labelframe, bg='white',text='Folder name:', font=("Courier",14,'bold'))
+        enterframe_labelframe = LabelFrame(covid19mc_labelframe, bg='white', width=480, height=175)
+        enterframe_labelframe.place(x=70,y=40)
+        foldername_label = Label(covid19mc_labelframe, bg='white',text='Folder name:', fg='black', font=("Courier",14,'bold'))
         foldername_label.place(x=90,y=95)
+        
+        global createclicked
+        global directory_old
+        directory = strftime("COVID19 %y-%m-%d %H.%M.%S")
+        if(createclicked == 0):
+            directory_label = Label(covid19mc_labelframe, bg='grey94',text=directory)
+            directory_label.place(x=240,y=60)
+            directory_old = directory
+        else:
+            directory_label = Label(covid19mc_labelframe, bg='grey94',text=directory_old)
+            directory_label.place(x=240,y=60)
         
         def enter_entry(event):
             root.attributes('-fullscreen', False)
@@ -280,49 +301,59 @@ def mainscreen():
         foldername_entry.insert(0,foldername)
         foldername_entry.bind("<Button-1>", enter_entry)
         foldername_entry.place(x=240,y=95)
-            
+        
         def create_click():
+            global createclicked
+            createclicked = 1
+            global foldername
+            foldername = foldername_entry.get()       
+            name = strftime(foldername)
+            global path0
+            path0 = os.path.join("/home/pi/Desktop/spotcheck result", directory +" "+ name)
             if(foldername_entry.get()==""):
                 msgbox = messagebox.showwarning(" ","Please enter the folder name !" )
             else:
-                subprocess.Popen(['killall','florence'])
-                root.attributes('-fullscreen', True)
-                global foldername
-                foldername = foldername_entry.get()       
-                directory = strftime(foldername)
-                global path0
-                path0 = os.path.join("/home/pi/Desktop/spotcheck result",directory)
-                try:
+                if os.path.exists(path0):
+                    subprocess.Popen(['killall','florence'])
+                    root.attributes('-fullscreen', True)
+                    msg = messagebox.askquestion("The folder already exixts", "Do you want to overwrite it?")
+                    if(msg=='yes'):
+                        shutil.rmtree(path0)
+                        os.mkdir(path0)
+                        global path1
+                        path1 = os.path.join(path0,"Original image")
+                        os.mkdir(path1)
+                        global path2
+                        path2 = os.path.join(path0,"Processed image")
+                        os.mkdir(path2)
+                        global path3
+                        path3 = os.path.join(path0,"Result Table")
+                        os.mkdir(path3)
+                        global path4
+                        path4 = os.path.join(path0,"Sample image")
+                        os.mkdir(path4)
+                        global path5
+                        path5 = os.path.join(path0,"Temperature program")
+                        os.mkdir(path5)
+                        mainscreen_labelframe.place_forget()
+                        settemp()
+                else:
+                    subprocess.Popen(['killall','florence'])
+                    root.attributes('-fullscreen', True)
                     os.mkdir(path0)
-                    global path1
                     path1 = os.path.join(path0,"Original image")
-                    if os.path.exists(path1):
-                        shutil.rmtree(path1)
                     os.mkdir(path1)
-                    global path2
                     path2 = os.path.join(path0,"Processed image")
-                    if os.path.exists(path2):
-                        shutil.rmtree(path2)
                     os.mkdir(path2)
-                    global path3
                     path3 = os.path.join(path0,"Result Table")
-                    if os.path.exists(path3):
-                        shutil.rmtree(path3)
                     os.mkdir(path3)
-                    global path4
                     path4 = os.path.join(path0,"Sample image")
-                    if os.path.exists(path4):
-                        shutil.rmtree(path4)
                     os.mkdir(path4)
-                    global path5
                     path5 = os.path.join(path0,"Temperature program")
-                    if os.path.exists(path5):
-                        shutil.rmtree(path5)
                     os.mkdir(path5)
                     mainscreen_labelframe.place_forget()
                     settemp()
-                except OSError as error:
-                    messagebox.showerror("Error",error)
+                        
         create_button = Button(covid19mc_labelframe, fg='white', activebackground="green yellow", font=("Courier",12,'bold'), bg="lawn green", text="CREATE", height=3, width=11, borderwidth=0, command=create_click)
         create_button.place(x=240,y=135)
                    
@@ -332,7 +363,7 @@ def mainscreen():
         home_canvas['bg'] = 'dodger blue'
         covid19_canvas['bg'] = 'dodger blue'
         tb_canvas['bg'] = 'white'
-        viewresult_canvas['bg'] = 'dodger blue'
+#         viewresult_canvas['bg'] = 'dodger blue'
         
         global covid19clicked
         covid19clicked = 0
@@ -342,34 +373,34 @@ def mainscreen():
         tbmc_labelframe = LabelFrame(mainscreen_labelframe, bg='white', width=624, height=478)
         tbmc_labelframe.place(x=172,y=0)
     
-    def viewresult_click():
-        subprocess.Popen(['killall','florence'])
-        root.attributes('-fullscreen', True)
-        home_canvas['bg'] = 'dodger blue'
-        covid19_canvas['bg'] = 'dodger blue'
-        tb_canvas['bg'] = 'dodger blue'
-        viewresult_canvas['bg'] = 'white'
-        
-        global covid19clicked
-        covid19clicked = 0
-        global tbclicked
-        tbclicked = 0
-        
-        viewresultmc_labelframe = LabelFrame(mainscreen_labelframe, bg='white', width=624, height=478)
-        viewresultmc_labelframe.place(x=172,y=0)
-        filename = fd.askopenfilename(initialdir='/home/pi/Desktop/spotcheck result/',title="Select file")
-        image = cv2.imread(filename)
-        cv2.imshow('Image',image)
-        cv2.waitKey(0)
-        
-    home_button = Button(mainscreen_labelframe, bg="dodger blue", activebackground="dodger blue", text="HOME", fg='white', font=buttonFont, borderwidth=0, height=4, width=20,command=home_click)
+#     def viewresult_click():
+#         subprocess.Popen(['killall','florence'])
+#         root.attributes('-fullscreen', True)
+#         home_canvas['bg'] = 'dodger blue'
+#         covid19_canvas['bg'] = 'dodger blue'
+#         tb_canvas['bg'] = 'dodger blue'
+#         viewresult_canvas['bg'] = 'white'
+#         
+#         global covid19clicked
+#         covid19clicked = 0
+#         global tbclicked
+#         tbclicked = 0
+#         
+#         viewresultmc_labelframe = LabelFrame(mainscreen_labelframe, bg='white', width=624, height=478)
+#         viewresultmc_labelframe.place(x=172,y=0)
+#         filename = fd.askopenfilename(initialdir='/home/pi/Desktop/spotcheck result/',title="Select file")
+#         image = cv2.imread(filename)
+#         cv2.imshow('Image',image)
+#         cv2.waitKey(0)
+   
+    home_button = Button(mainscreen_labelframe, bg="dodger blue", activebackground="dodger blue", text="HOME", font=buttonFont, borderwidth=0, height=4, width=20,command=home_click)
     home_button.place(x=1,y=85)
     covid19_button = Button(mainscreen_labelframe, bg="dodger blue", activebackground="dodger blue", text="COVID 19", fg='white', font=buttonFont, borderwidth=0, height=4, width=20, command=covid19_click)
     covid19_button.place(x=1,y=163)
     tb_button = Button(mainscreen_labelframe, bg="dodger blue", activebackground="dodger blue", text="TB", fg='white', font=buttonFont, borderwidth=0, height=4, width=20, command=tb_click)
     tb_button.place(x=1,y=243)
-    viewresult_button = Button(mainscreen_labelframe, bg="dodger blue", activebackground="dodger blue", text="VIEW RESULT", fg='white', font=buttonFont, borderwidth=0, height=4, width=20, command=viewresult_click)
-    viewresult_button.place(x=1,y=321)
+#     viewresult_button = Button(mainscreen_labelframe, bg="dodger blue", activebackground="dodger blue", text="VIEW RESULT", fg='white', font=buttonFont, borderwidth=0, height=4, width=20, command=viewresult_click)
+#     viewresult_button.place(x=1,y=321)
     
     home_canvas = Canvas(mainscreen_labelframe, bg="dodger blue", bd=0, highlightthickness=0, height=72, width=13)
     home_canvas.place(x=1,y=87)
@@ -377,8 +408,8 @@ def mainscreen():
     covid19_canvas.place(x=1,y=165)
     tb_canvas = Canvas(mainscreen_labelframe, bg="dodger blue", bd=0, highlightthickness=0, height=72, width=13)
     tb_canvas.place(x=1,y=245)
-    viewresult_canvas = Canvas(mainscreen_labelframe, bg="dodger blue", bd=0, highlightthickness=0, height=72, width=13)
-    viewresult_canvas.place(x=1,y=323)
+#     viewresult_canvas = Canvas(mainscreen_labelframe, bg="dodger blue", bd=0, highlightthickness=0, height=72, width=13)
+#     viewresult_canvas.place(x=1,y=323)
     
     global covid19clicked
     global tbclicked
@@ -391,9 +422,15 @@ def mainscreen():
     
 ###################################################### Giao diện set nhiệt độ ############################################################ 
 def settemp():
+    camera = PiCamera(framerate=Fraction(1,6), sensor_mode=3)
+    camera.close()
+    fr = open("tempsaved.txt","r")
+    t1 = fr.readline()[3:5]
+    t2 = fr.readline()[3:5]
+    t3 = fr.readline()[3:5]
     global samples
     samples=0
-    settemp_labelframe = LabelFrame(root, bg='white', width=1024, height=600)
+    settemp_labelframe = LabelFrame(root, bg='white', width=800, height=600)
     settemp_labelframe.place(x=0,y=0)
     settemptop_labelframe = LabelFrame(settemp_labelframe, bg='white', width=798, height=350)
     settemptop_labelframe.place(x=0,y=52)
@@ -503,7 +540,7 @@ def settemp():
     t1_entry = Entry(settemptop_labelframe, width=2, justify='center', bg='white', borderwidth=0, fg ='grey32', font=("Courier",38,"bold"))
     t1_entry.place(x=119,y=56)
     t1_entry.bind('<Button-1>', entryt1_click)
-    global t1
+   
     t1_entry.insert(0,t1)
     t2_label = Label(settemptop_labelframe, bg='white', text='T2', fg='black', font=("Courier",20,"bold"))
     t2_label.place(x=286, y=14)
@@ -512,7 +549,7 @@ def settemp():
     t2_entry = Entry(settemptop_labelframe, width=2, justify='center', bg='white', borderwidth=0, fg ='grey32', font=("Courier",38,"bold"))
     t2_entry.place(x=323,y=56)
     t2_entry.bind('<Button-1>', entryt2_click)
-    global t2
+
     t2_entry.insert(0,t2)
     t3_label = Label(settemptop_labelframe, bg='white', text='T3', fg='black', font=("Courier",20,"bold"))
     t3_label.place(x=82, y=185)
@@ -521,7 +558,7 @@ def settemp():
     t3_entry = Entry(settemptop_labelframe, width=2, justify='center', bg='white', borderwidth=0, fg ='grey32', font=("Courier",38,"bold"))
     t3_entry.place(x=119,y=228)
     t3_entry.bind('<Button-1>', entryt3_click)
-    global t3
+   
     t3_entry.insert(0,t3)
     t4_label = Label(settemptop_labelframe, bg = 'white', text='T4', fg='grey67', font=("Courier",20,"bold"))
     t4_label.place(x=286, y=185)
@@ -541,14 +578,33 @@ def settemp():
         t1_set = t1_set[0:2]
         t2_set = t2_set[0:2]
         t3_set = t3_set[0:2]
-        
+        global path5
+        if os.path.exists(path5+"/Temperature_program.txt"):
+            fc= open(path5+"/Temperature_program.txt","w")
+            fc.truncate(0)
+            fc.writelines("T1="+t1_entry.get()[0:2]+"\n")
+            fc.writelines("T2="+t2_entry.get()[0:2]+"\n")
+            fc.writelines("T3="+t3_entry.get()[0:2]+"\n")
+        else: 
+            fc= open(path5+"/Temperature_program.txt","w+")
+            fc.writelines("T1="+t1_entry.get()[0:2]+"\n")
+            fc.writelines("T2="+t2_entry.get()[0:2]+"\n")
+            fc.writelines("T3="+t3_entry.get()[0:2]+"\n")
         scanposition()
-    
-    back_button = Button(settemp_labelframe, font=('Courier','12','bold'), bg="Lavender", text="Back" , height=3, width=11, borderwidth=0, command=back_click)
+    def save_click():
+        msg = messagebox.askquestion("Save Temperature", "Do you want to save?")
+        if(msg=='yes'):
+            fw = open("tempsaved.txt","w")
+            fw.truncate(0)
+            fw.writelines("T1="+t1_entry.get()[0:2]+"\n")
+            fw.writelines("T2="+t2_entry.get()[0:2]+"\n")
+            fw.writelines("T3="+t3_entry.get()[0:2]+"\n")
+        
+    back_button = Button(settemp_labelframe, font=('Courier','12','bold'), bg="dodger blue", text="Back" , height=3, width=11, borderwidth=0, command=back_click)
     back_button.place(x=14,y=406)
-    next_button = Button(settemp_labelframe, font=('Courier','12','bold'), bg="Lavender", text="Next", height=3, width=11, borderwidth=0, command=thread)
+    next_button = Button(settemp_labelframe, font=('Courier','12','bold'), bg="dodger blue", text="Next", height=3, width=11, borderwidth=0, command=thread)
     next_button.place(x=647,y=406)
-    save_button = Button(settemp_labelframe, activebackground="gold", font=('Courier','12','bold'), bg="yellow", text="Save", height=3, width=11, borderwidth=0)
+    save_button = Button(settemp_labelframe, activebackground="gold", font=('Courier','12','bold'), bg="yellow", text="Save", height=3, width=11, borderwidth=0,command=save_click)
     save_button.place(x=332,y=406)
 
 ##################################################### Giao diện định vị mẫu ############################################################   
@@ -564,7 +620,7 @@ def scanposition():
     ser.flushInput()
     ser.flushOutput()
     global scanpostion_labelframe
-    scanposition_labelframe = LabelFrame(root, bg='white', width=1024, height=600)
+    scanposition_labelframe = LabelFrame(root, bg='white', width=800, height=600)
     scanposition_labelframe.place(x=0,y=0)
     title_labelframe = LabelFrame(scanposition_labelframe, bg='dodger blue', width=798, height=50)
     title_labelframe.place(x=0,y=0)
@@ -588,11 +644,10 @@ def scanposition():
     scanposition_progressbar = ttk.Progressbar(root, orient = HORIZONTAL, style="green.Horizontal.TProgressbar", length = 200, mode = 'determinate')
     scanposition_progressbar.place(x=299,y=408)
 
-   
     def back_click():
         scanposition_labelframe.place_forget()
         settemp()
-    back_button = Button(scanposition_labelframe, font=("Courier",12,'bold'), bg="Lavender", text="Back" , height=3, width=11, borderwidth=0, command=back_click)
+    back_button = Button(scanposition_labelframe, font=("Courier",12,'bold'), bg="dodger blue", text="Back" , height=3, width=11, borderwidth=0, command=back_click)
     back_button.place(x=14,y=406)
 
     send_data = 'P'
@@ -631,7 +686,7 @@ def scanposition():
         sleep(2)
         camera.shutter_speed = 6000000
         camera.exposure_mode = 'off'
-        output = path1 + "/Sample.jpg"
+        output = path4 + "/Sample_original.jpg"
         camera.capture(output)
         camera.close()
         scanposition_progressbar['value'] = 40
@@ -643,7 +698,7 @@ def scanposition():
         root.update_idletasks()
         sleep(1)
 
-        output = path4 + "/Sample.jpg"
+        output = path4 + "/Sample_processed.jpg"
         cv2.imwrite(output, pos_image)
         scanposition_progressbar['value'] = 90
         root.update_idletasks()
@@ -704,9 +759,11 @@ def scanposition():
             th1 = Thread(target = next_click)
             th1.start()
         def next_click():
+            global createclicked
+            createclicked = 0
             scanposition_labelframe.place_forget()   
             analysis()
-        next_button = Button(scanposition_labelframe, font=("Courier",12,'bold'), bg="Lavender", text="Next", height=3, width=11, borderwidth=0,command=thread)
+        next_button = Button(scanposition_labelframe, font=("Courier",12,'bold'), bg="dodger blue", text="Next", height=3, width=11, borderwidth=0,command=thread)
         next_button.place(x=647,y=406)
 
 ################################################### Giao diện phân tích mẫu ###########################################################
@@ -715,12 +772,12 @@ def analysis():
     ser.flushInput()
     ser.flushOutput()
     global analysis_labelframe
-    analysis_labelframe = LabelFrame(root, bg='white', width=1024, height=600)
+    analysis_labelframe = LabelFrame(root, bg='white', width=800, height=600)
     analysis_labelframe.place(x=0,y=0)
     title_labelframe = LabelFrame(analysis_labelframe, bg='dodger blue', width=798, height=50)
     title_labelframe.place(x=0,y=0)
     analysis_label = Label(analysis_labelframe, bg='dodger blue', text='SAMPLES ANALYSIS', font=("Courier",17,'bold'), width=20, height=1 )
-    analysis_label.place(x=264,y=12)
+    analysis_label.place(x=261,y=12)
     t_labelframe = LabelFrame(analysis_labelframe, bg='white', width=798, height=298)
     t_labelframe.place(x=0,y=70)
 
@@ -760,10 +817,10 @@ def analysis():
             send_data ='R'
             ser.write(send_data.encode())
             pause_button['text']= 'Pause'
-    pause_button = Button(analysis_labelframe, bg="Lavender", font=("Courier",12,'bold'), text="Pause" , height=4, width=12, borderwidth=0, command=pause_click)
-    pause_button.place(x=450,y=377)
-    stop_button = Button(analysis_labelframe, bg="Lavender", font=("Courier",12,'bold'), text="Stop", height=4, width=12, borderwidth=0, command=stop_click)
-    stop_button.place(x=605,y=377)
+    pause_button = Button(analysis_labelframe, bg="yellow", font=("Courier",12,'bold'), text="Pause" , height=3, width=10, borderwidth=0, command=pause_click)
+    pause_button.place(x=450,y=390)
+    stop_button = Button(analysis_labelframe, bg="red", font=("Courier",12,'bold'), text="Stop", height=3, width=10, borderwidth=0, command=stop_click)
+    stop_button.place(x=590,y=390)
     root.update()
     
     send_data = "t"+ t1_set + "," + t2_set + "," + t3_set + "z"
@@ -1040,6 +1097,9 @@ def analysis():
                 
                 workbook.save(path3+"/T3.xlsx")
                 
+                def thr():
+                    th2 = Thread(target = viewresult_click)
+                    th2.start()
                 def viewresult_click():
                     viewresult_button.place_forget()
                     t1_labelframe.place_forget()
@@ -1050,7 +1110,30 @@ def analysis():
                     
                     annotate_labelframe = LabelFrame(analysis_labelframe, bg='white', width=380, height=305)
                     annotate_labelframe.place(x=360,y=76)
-
+                    root.update_idletasks()
+                    
+                    negative_label = Label(annotate_labelframe, bg='lawn green', width=4, height=2)
+                    negative_label.place(x=75,y=32)
+                    negativetext_label = Label(annotate_labelframe, bg='white', text='  (N)           NEGATIVE', height=2)
+                    negativetext_label.place(x=145,y=32)
+                    positive_label = Label(annotate_labelframe, bg='red', width=4, height=2)
+                    positive_label.place(x=75,y=82)
+                    positivetext_label = Label(annotate_labelframe, bg='white', text='  (P)           POSITIVE', height=2)
+                    positivetext_label.place(x=145,y=82)
+                    redue_label = Label(annotate_labelframe, bg='cyan', width=4, height=2)
+                    redue_label.place(x=75,y=132)
+                    reduetext_label = Label(annotate_labelframe, bg='white', text='  (R)           UNRESOLVED', height=2)
+                    reduetext_label.place(x=145,y=132)
+                    none_label = Label(annotate_labelframe, bg='white smoke', width=4, height=2)
+                    none_label.place(x=75,y=182)
+                    nonetext_label = Label(annotate_labelframe, bg='white', text='(N/A)         NOT AVAILABLE', height=2)
+                    nonetext_label.place(x=145,y=182)
+                    error_label = Label(annotate_labelframe, bg='yellow', width=4, height=2)
+                    error_label.place(x=75,y=232)
+                    errortext_label = Label(annotate_labelframe, bg='white', text='  (E)           ERROR', height=2)
+                    errortext_label.place(x=145,y=232)
+                    root.update_idletasks()
+                    
                     def finish_click():
                         msgbox = messagebox.askquestion('Finish','Are you want to return to the main menu ?', icon = 'warning')
                         if(msgbox=='yes'):
@@ -1061,10 +1144,10 @@ def analysis():
                             covid19clicked = 0
                             tb_clicked = 0
                             analysis_labelframe.place_forget()
-                            mainscreen()
-                            
+                            mainscreen()                         
                     finish_button = Button(analysis_labelframe, bg="dark orange", text="FINISH", height=3, width=15, borderwidth=0, command=finish_click)
-                    finish_button.place(x=480,y=395)
+                    finish_button.place(x=480,y=396)
+                    root.update_idletasks()
                     
                     result_labelframe = LabelFrame(analysis_labelframe, bg='ghost white', width=600,height = 307)
                     result_labelframe.place(x=104,y=120)
@@ -1072,11 +1155,12 @@ def analysis():
                     row_labelframe.place(x=104,y=76)
                     column_labelframe = LabelFrame(analysis_labelframe, bg='ghost white', width=50,height = 307)
                     column_labelframe.place(x=62,y=120)
-                                                    
+                    root.update_idletasks()
+                    
                     row_label = [0,0,0,0,0,0]
                     for i in range (0,6):
                         row_text = i+1
-                        row_label[i] = Label(row_labelframe, text=row_text, bg='lavender', width=4, height=2)
+                        row_label[i] = Label(row_labelframe, text=row_text, bg='grey95', width=4, height=2)
                         row_label[i].grid(row=0,column=i,padx=2,pady=2)
                                                         
                     column_label = [0,0,0,0,0,0,0,0]
@@ -1097,7 +1181,7 @@ def analysis():
                             column_text = 'G'
                         if(i==7):
                             column_text = 'H'
-                        column_label[i] = Label(column_labelframe, text=column_text, bg='lavender', width=4, height=2)
+                        column_label[i] = Label(column_labelframe, text=column_text, bg='grey95', width=4, height=2)
                         column_label[i].grid(row=i,column=0,padx=2,pady=2)
 
                     label = list(range(48))
@@ -1134,6 +1218,7 @@ def analysis():
                     result_table(30,36,5)
                     result_table(36,42,6)
                     result_table(42,48,7)
+                    root.update_idletasks()
                     
                     def detail_click():
                         if(detail_button['bg']=='lawn green'):
@@ -1172,9 +1257,13 @@ def analysis():
                                         label[i]['text'] = str('%d'%t3_result[i])
                                         
                     detail_button = Button(analysis_labelframe, activebackground="white", bg="lavender", text="DETAIL", height=3, width=10, borderwidth=0, command=detail_click)
-                    detail_button.place(x=360,y=395)
-                    
-                viewresult_button = Button(analysis_labelframe, bg="lavender", text="VIEW RESULT", height=3, width=15, borderwidth=0, command=viewresult_click)
+                    detail_button.place(x=360,y=396)
+                    root.update_idletasks()
+                    subprocess.call(["scrot",path3+"/result.jpg"])
+#                     screenshot_img = Image.open(path3+"/result.jpg")
+#                     screenshot_crop = screenshot_img.crop((60,74,352,475))
+#                     screenshot_crop = screenshot_crop.save(path3+"/result.jpg")
+                viewresult_button = Button(analysis_labelframe, bg="dodger blue", text="VIEW RESULT", height=3, width=15, borderwidth=0, command=thr)
                 viewresult_button.place(x=327,y=394)
 
 ########################################################## Khoi tao excel ###############################################################
