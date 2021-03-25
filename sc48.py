@@ -65,6 +65,18 @@ foldername = ""
 samples = 0
 createclicked = 0
 directory_old = ""
+div = list(range(48))
+
+################################################################ Camera ####################################################################
+def camera_capture(output):
+    camera = PiCamera(framerate=Fraction(1,6), sensor_mode=3)
+    camera.rotation = 180
+    camera.iso = 800
+    sleep(2)
+    camera.shutter_speed = 6000000
+    camera.exposure_mode = 'off'
+    camera.capture(output)
+    camera.close()
 
 ########################################################### Sắp xếp contours ###############################################################
 def sorting_y(contour):
@@ -80,10 +92,10 @@ def sorting_xy(contour):
 ############################################################# Xử lý ảnh ###################################################################
 def process_image(image_name):
     image = cv2.imread(image_name)
-    blur_img = cv2.GaussianBlur(image.copy(), (33,33), 0)            
-    gray = cv2.cvtColor(blur_img, cv2.COLOR_BGR2GRAY)
-    gray_img = gray.copy()
-    thresh, binary_img = cv2.threshold(gray_img, 40, maxval=255, type=cv2.THRESH_BINARY) 
+    #blur_img = cv2.GaussianBlur(image.copy(), (35,35), 0)
+    blur_img = cv2.fastNlMeansDenoisingColored(image.copy(),None,15,15,7,21)
+    gray_img = cv2.cvtColor(blur_img, cv2.COLOR_BGR2GRAY)            
+    thresh, binary_img = cv2.threshold(gray_img.copy(), 40, maxval=255, type=cv2.THRESH_BINARY) 
     contours, hierarchy = cv2.findContours(binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     print("Number of contours: " + str(len(contours)))
 
@@ -92,20 +104,20 @@ def process_image(image_name):
     contour_img = np.zeros_like(gray_img)
     bourect0 = cv2.boundingRect(contours[0])
     bourect47 = cv2.boundingRect(contours[len(contours)-1])
-    start_point = (bourect0[0]-15, bourect0[1]-15)  
-    end_point = (bourect47[0]+bourect47[2]+15, bourect47[1]+bourect47[3]+15)
+    start_point = (bourect0[0]-10, bourect0[1]-10)  
+    end_point = (bourect47[0]+bourect47[2]+10, bourect47[1]+bourect47[3]+10)
     contour_img = cv2.rectangle(contour_img, start_point, end_point, (255,255,255), -1)
-    rect_w = (bourect47[0]+bourect47[2]+15) - (bourect0[0]-15)
-    rect_h = (bourect47[1]+bourect47[3]+15) - (bourect0[1]-15)
+    rect_w = (bourect47[0]+bourect47[2]+10) - (bourect0[0]-10)
+    rect_h = (bourect47[1]+bourect47[3]+10) - (bourect0[1]-10)
     cell_w = round(rect_w/6)
     cell_h = round(rect_h/8)
     for i in range(1,6):
-        contour_img = cv2.line(contour_img, (start_point[0]+i*cell_w,start_point[1]), (start_point[0]+i*cell_w,end_point[1]),(0,0,0), 3)
+        contour_img = cv2.line(contour_img, (start_point[0]+i*cell_w,start_point[1]), (start_point[0]+i*cell_w,end_point[1]),(0,0,0), 5)
     for i in range(1,8):
-        contour_img = cv2.line(contour_img, (start_point[0],start_point[1]+i*cell_h), (end_point[0],start_point[1]+i*cell_h),(0,0,0), 3)
+        contour_img = cv2.line(contour_img, (start_point[0],start_point[1]+i*cell_h), (end_point[0],start_point[1]+i*cell_h),(0,0,0), 5)
 
     #gray1_img = cv2.cvtColor(contour_img, cv2.COLOR_BGR2GRAY)
-    thresh1 , binary1_img = cv2.threshold(contour_img, 200, maxval=255, type=cv2.THRESH_BINARY)
+    thresh1 , binary1_img = cv2.threshold(contour_img, 250, maxval=255, type=cv2.THRESH_BINARY)
     contours1, hierarchy1 = cv2.findContours(binary1_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
     contours1.sort(key=lambda data:sorting_y(data))
@@ -132,7 +144,7 @@ def process_image(image_name):
     sum_intensities = []
     result_list = list(range(48))
     area = list(range(48))
-
+    
     for i in range(len(sorted_contours1)):
         cimg = np.zeros_like(gray_img)
         cv2.drawContours(cimg, sorted_contours1, i, color = 255, thickness = -1)
@@ -159,25 +171,27 @@ def process_image(image_name):
 #             result_list[i] *= 1.5
     
 # old led:
-    for i in range(len(sorted_contours1)):
-        if(i==0 or i==1 or i==4 or i==11):
-            result_list[i] = round(result_list[i]*1.24)
-        if(i==2 or i==3 or i==7 or i==6 or i==12 or i==38 or i==46 or i==47):
-            result_list[i] = round(result_list[i]*1.17)
-        if(i==5):
-            result_list[i] = round(result_list[i]*1.4)
-        if(i==9 or i==10 or i==13 or i==16 or i==17 or i==18 or i==23
-           or i==30 or i==31 or i==36 or i==37 or i==39 or i==40 or i==41
-           or i==42 or i==43 or i==44 or i==45):
-            result_list[i] = round(result_list[i]*1.11)
-        if(i==14 or i==15 or i==19 or i==22 or i==24 or i==29 or i==32
-           or i==33 or i==34):
-            result_list[i] = round(result_list[i]*1.05)
-    
+#     for i in range(len(sorted_contours1)):
+#         if(i==0 or i==1 or i==4 or i==11):
+#             result_list[i] = round(result_list[i]*1.24)
+#         if(i==2 or i==3 or i==7 or i==6 or i==12 or i==38 or i==46 or i==47):
+#             result_list[i] = round(result_list[i]*1.17)
+#         if(i==5):
+#             result_list[i] = round(result_list[i]*1.4)
+#         if(i==9 or i==10 or i==13 or i==16 or i==17 or i==18 or i==23
+#            or i==30 or i==31 or i==36 or i==37 or i==39 or i==40 or i==41
+#            or i==42 or i==43 or i==44 or i==45):
+#             result_list[i] = round(result_list[i]*1.11)
+#         if(i==14 or i==15 or i==19 or i==22 or i==24 or i==29 or i==32
+#            or i==33 or i==34):
+#             result_list[i] = round(result_list[i]*1.11)
+  
     for i in range(len(sorted_contours1)):
         if(result_list[i]>99):
             result_list[i]=99
-#     blur1_img = cv2.GaussianBlur(image.copy(), (33,33), 0) 
+            
+#     blur1_img = cv2.GaussianBlur(image.copy(), (51,51), 0)
+#     #blur1_img = cv2.fastNlMeansDenoisingColored(image.copy(),None,15,15,7,21) 
 #     hsv_img = cv2.cvtColor(blur1_img, cv2.COLOR_BGR2HSV)
 #     list_hsvvalue = []
 #     list_index = list(range(48))
@@ -191,7 +205,7 @@ def process_image(image_name):
 #             list_index[i].append(list_hsvvalue[i][j][2])
 #         list_intensities.append(sum(list_index[i]))
 #         area[i]= cv2.contourArea(sorted_contours1[i])
-#         result_list[i] = round((list_intensities[i])*45/59768)
+#         result_list[i] = round((list_intensities[i])*20/48563)
 
 
     for i in range(len(sorted_contours1)):
@@ -229,7 +243,7 @@ def mainscreen():
         home_canvas['bg'] = 'white'
         covid19_canvas['bg'] = 'dodger blue'
         tb_canvas['bg'] = 'dodger blue'
-#         viewresult_canvas['bg'] = 'dodger blue'
+        calibration_canvas['bg'] = 'dodger blue'
         
         global covid19clicked
         covid19clicked = 0
@@ -268,7 +282,7 @@ def mainscreen():
         home_canvas['bg'] = 'dodger blue'
         covid19_canvas['bg'] = 'white'
         tb_canvas['bg'] = 'dodger blue'
-#         viewresult_canvas['bg'] = 'dodger blue'
+        calibration_canvas['bg'] = 'dodger blue'
         
         global covid19clicked
         covid19clicked = 1
@@ -309,7 +323,8 @@ def mainscreen():
             foldername = foldername_entry.get()       
             name = strftime(foldername)
             global path0
-            path0 = os.path.join("/home/pi/Desktop/spotcheck result", directory +" "+ name)
+            global directory_old
+            path0 = os.path.join("/home/pi/Desktop/spotcheck result", directory_old +" "+ name)
             if(foldername_entry.get()==""):
                 msgbox = messagebox.showwarning(" ","Please enter the folder name !" )
             else:
@@ -363,7 +378,7 @@ def mainscreen():
         home_canvas['bg'] = 'dodger blue'
         covid19_canvas['bg'] = 'dodger blue'
         tb_canvas['bg'] = 'white'
-#         viewresult_canvas['bg'] = 'dodger blue'
+        calibration_canvas['bg'] = 'dodger blue'
         
         global covid19clicked
         covid19clicked = 0
@@ -373,44 +388,82 @@ def mainscreen():
         tbmc_labelframe = LabelFrame(mainscreen_labelframe, bg='white', width=624, height=478)
         tbmc_labelframe.place(x=172,y=0)
     
-#     def viewresult_click():
-#         subprocess.Popen(['killall','florence'])
-#         root.attributes('-fullscreen', True)
-#         home_canvas['bg'] = 'dodger blue'
-#         covid19_canvas['bg'] = 'dodger blue'
-#         tb_canvas['bg'] = 'dodger blue'
-#         viewresult_canvas['bg'] = 'white'
-#         
-#         global covid19clicked
-#         covid19clicked = 0
-#         global tbclicked
-#         tbclicked = 0
-#         
-#         viewresultmc_labelframe = LabelFrame(mainscreen_labelframe, bg='white', width=624, height=478)
-#         viewresultmc_labelframe.place(x=172,y=0)
-#         filename = fd.askopenfilename(initialdir='/home/pi/Desktop/spotcheck result/',title="Select file")
-#         image = cv2.imread(filename)
-#         cv2.imshow('Image',image)
-#         cv2.waitKey(0)
-   
+    def calibration_click():
+        subprocess.Popen(['killall','florence'])
+        root.attributes('-fullscreen', True)
+        home_canvas['bg'] = 'dodger blue'
+        covid19_canvas['bg'] = 'dodger blue'
+        tb_canvas['bg'] = 'dodger blue'
+        calibration_canvas['bg'] = 'white'
+        
+        calibrationmc_labelframe = LabelFrame(mainscreen_labelframe, bg='white', width=624, height=478)
+        calibrationmc_labelframe.place(x=172,y=0)
+        
+        def calib_click():
+            camera = PiCamera(framerate=Fraction(1,6), sensor_mode=3)
+            camera.rotation = 180
+            camera.iso = 800
+            sleep(2)
+            camera.shutter_speed = 6000000
+            camera.exposure_mode = 'off'
+            camera.capture('calib.jpg')
+            camera.close()
+            
+            calib_result, __,__,__ = process_image('calib.jpg')
+            if(max(calib_result) - min(calib_result) >=10):
+                warning = messagebox.askquestion("WARNING: Unstable light intensity! ", "Do you want to exit program?", icon='error')
+                if(warning=='yes'):
+                    root.destroy()
+            else:
+                global div
+                for i in range(0,48):
+                    div[i] = round(calib_result[21]/calib_result[i],2)
+                    if(i<6):
+                        pos = str(chr(65+i+1)) + "2"
+                    if(i>=6 and i<12):
+                        pos = str(chr(65+i-5)) + "3"
+                    if(i>=12 and i<18):
+                        pos = str(chr(65+i-11)) + "4"
+                    if(i>=18 and i<24):
+                        pos = str(chr(65+i-17)) + "5"
+                    if(i>=24 and i<30):
+                        pos = str(chr(65+i-23)) + "6"
+                    if(i>=30 and i<36):
+                        pos = str(chr(65+i-29)) + "7"
+                    if(i>=36 and i<42):
+                        pos = str(chr(65+i-35)) + "8"
+                    if(i>=42):
+                        pos = str(chr(65+i-41)) + "9"
+                    
+                    sheet[pos] = div[i]
+                workbook.save('Calibration_Value.xlsx')
+
+                msg = messagebox.showinfo('Calibration', 'Calibration Done!')
+        
+        calib_button = Button(calibrationmc_labelframe, fg='white', font=("Courier",11,'bold'), bg="dodger blue", text="START CALIBRATION", height=4, width=15, borderwidth=0, command=calib_click)
+        calib_button.place(x=230,y=320)
+        
+        
     home_button = Button(mainscreen_labelframe, bg="dodger blue", activebackground="dodger blue", text="HOME", font=buttonFont, borderwidth=0, height=4, width=20,command=home_click)
-    home_button.place(x=1,y=85)
+    home_button.place(x=1,y=83)
     covid19_button = Button(mainscreen_labelframe, bg="dodger blue", activebackground="dodger blue", text="COVID 19", fg='white', font=buttonFont, borderwidth=0, height=4, width=20, command=covid19_click)
     covid19_button.place(x=1,y=163)
     tb_button = Button(mainscreen_labelframe, bg="dodger blue", activebackground="dodger blue", text="TB", fg='white', font=buttonFont, borderwidth=0, height=4, width=20, command=tb_click)
     tb_button.place(x=1,y=243)
+    calibration_button = Button(mainscreen_labelframe, bg="dodger blue", activebackground="dodger blue", text="CALIBRATION", fg='white', font=buttonFont, borderwidth=0, height=4, width=20, command=calibration_click)
+    calibration_button.place(x=1,y=323)
 #     viewresult_button = Button(mainscreen_labelframe, bg="dodger blue", activebackground="dodger blue", text="VIEW RESULT", fg='white', font=buttonFont, borderwidth=0, height=4, width=20, command=viewresult_click)
 #     viewresult_button.place(x=1,y=321)
     
     home_canvas = Canvas(mainscreen_labelframe, bg="dodger blue", bd=0, highlightthickness=0, height=72, width=13)
-    home_canvas.place(x=1,y=87)
+    home_canvas.place(x=1,y=85)
     covid19_canvas = Canvas(mainscreen_labelframe, bg="dodger blue", bd=0, highlightthickness=0, height=72, width=13)
     covid19_canvas.place(x=1,y=165)
     tb_canvas = Canvas(mainscreen_labelframe, bg="dodger blue", bd=0, highlightthickness=0, height=72, width=13)
     tb_canvas.place(x=1,y=245)
-#     viewresult_canvas = Canvas(mainscreen_labelframe, bg="dodger blue", bd=0, highlightthickness=0, height=72, width=13)
-#     viewresult_canvas.place(x=1,y=323)
-    
+    calibration_canvas = Canvas(mainscreen_labelframe, bg="dodger blue", bd=0, highlightthickness=0, height=72, width=13)
+    calibration_canvas.place(x=1,y=325)
+
     global covid19clicked
     global tbclicked
     if(covid19clicked==1):
@@ -422,8 +475,6 @@ def mainscreen():
     
 ###################################################### Giao diện set nhiệt độ ############################################################ 
 def settemp():
-    camera = PiCamera(framerate=Fraction(1,6), sensor_mode=3)
-    camera.close()
     fr = open("tempsaved.txt","r")
     t1 = fr.readline()[3:5]
     t2 = fr.readline()[3:5]
@@ -680,20 +731,14 @@ def scanposition():
     while(wait==1):
         process_label = Label(scanposition_labelframe, text='Processing...', bg='white', font=("Courier",13))
         process_label.place(x=333,y=440)
-        camera = PiCamera(framerate=Fraction(1,6), sensor_mode=3)
-        camera.rotation = 180
-        camera.iso = 800
-        sleep(2)
-        camera.shutter_speed = 6000000
-        camera.exposure_mode = 'off'
-        output = path4 + "/Sample_original.jpg"
-        camera.capture(output)
-        camera.close()
+        
+        camera_capture(path4 + "/Sample_original.jpg")
+        
         scanposition_progressbar['value'] = 40
         root.update_idletasks()
 
         global pos_result
-        pos_result, pos_image,__,__ = process_image(output)
+        pos_result, pos_image,__,__ = process_image(path4 + "/Sample_original.jpg")
         scanposition_progressbar['value'] = 60
         root.update_idletasks()
         sleep(1)
@@ -748,7 +793,7 @@ def scanposition():
         result_table(36,42,6)
         result_table(42,48,7)
         global samples
-        samplenum_label = Label(scanposition_labelframe, text='Number of Samples: ' + str(samples), fg='dodger blue', bg='white', font=("Courier",13))
+        samplenum_label = Label(scanposition_labelframe, text='Number of Samples: ' + str(samples-2), fg='dodger blue', bg='white', font=("Courier",13))
         samplenum_label.place(x=293,y=432)
         scan_label.place_forget()
         scanposition_progressbar.place_forget()
@@ -848,7 +893,7 @@ def analysis():
 
     while(wait==1):
         if(ser.in_waiting>0):
-            receive_data = ser.readline().decode('utf-8').rstrip()
+            receive_data = ser.readline().decode('utf-8',errors='ignore').rstrip()
             #print("Data received:", receive_data)
             if(receive_data!='C1' and receive_data!='C2' and receive_data!='C3'):
                 print("Data received:", receive_data)
@@ -866,22 +911,14 @@ def analysis():
                 tprocess_label = Label(t1_labelframe, bg=atk.DEFAULT_COLOR, fg='white smoke', text='Processing!', font=("Courier",9,'bold'))
                 tprocess_label.place(x=59,y=112)
 
-                camera = PiCamera(framerate=Fraction(1,6), sensor_mode=3)
-                camera.rotation = 180
-                camera.iso = 800
-                sleep(2)
-                camera.shutter_speed = 6000000
-                camera.exposure_mode = 'off'
-
                 global path1
-                output1 = path1 + "/T1.jpg"
-                camera.capture(output1)
-                camera.close()
+                camera_capture(path1 + "/T1.jpg")
+                  
                 send_data = 'C'
                 ser.write(send_data.encode())
                 print('Capture done!')
 
-                t1_result, t1_image, t1_start, t1_end = process_image(output1)
+                t1_result, t1_image, t1_start, t1_end = process_image(path1 + "/T1.jpg")
 
                 global path2
                 output = path2 + "/T1.jpg"
@@ -890,7 +927,7 @@ def analysis():
                 t1_analysis = Image.open(output)
                 t1_crop = t1_analysis.crop((t1_start[0]-7,t1_start[1]-7,t1_end[0]+7,t1_end[1]+7))   
                 crop_width, crop_height = t1_crop.size
-                scale_percent = 77
+                scale_percent = 75
                 width = int(crop_width * scale_percent / 100)
                 height = int(crop_height * scale_percent / 100)
                 display_img = t1_crop.resize((width,height))
@@ -948,26 +985,19 @@ def analysis():
                 tprocess_label = Label(t2_labelframe, bg=atk.DEFAULT_COLOR, fg='white smoke', text='Processing!', font=("Courier",9,'bold'))
                 tprocess_label.place(x=59,y=112)
 
-                camera = PiCamera(framerate=Fraction(1,6), sensor_mode=3)
-                camera.rotation = 180
-                camera.iso = 800
-                sleep(2)
-                camera.shutter_speed = 6000000
-                camera.exposure_mode = 'off'
-                output2 = path1 + "/T2.jpg"
-                camera.capture(output2)
-                camera.close()
+                camera_capture(path1 + "/T2.jpg")
+                
                 send_data = 'C'
                 ser.write(send_data.encode())
                 print('Capture done!')
-                t2_result, t2_image, t2_start, t2_end = process_image(output2)
+                t2_result, t2_image, t2_start, t2_end = process_image(path1 + "/T2.jpg")
                 output = path2 + "/T2.jpg"
                 cv2.imwrite(output, t2_image)
                 t2_analysis = Image.open(output)
                 t2_crop = t2_analysis.crop((t2_start[0]-7,t2_start[1]-7,t2_end[0]+7,t2_end[1]+7))
 
                 crop_width, crop_height = t2_crop.size
-                scale_percent = 77
+                scale_percent = 75
                 width = int(crop_width * scale_percent / 100)
                 height = int(crop_height * scale_percent / 100)
                 display_img = t2_crop.resize((width,height))
@@ -1026,26 +1056,19 @@ def analysis():
                 tprocess_label = Label(t3_labelframe, bg=atk.DEFAULT_COLOR, fg='white smoke', text='Processing!', font=("Courier",9,'bold'))
                 tprocess_label.place(x=59,y=112)
 
-                camera = PiCamera(framerate=Fraction(1,6), sensor_mode=3)
-                camera.rotation = 180
-                camera.iso = 800
-                sleep(2)
-                camera.shutter_speed = 6000000
-                camera.exposure_mode = 'off'
-                output3 = path1 + "/T3.jpg"
-                camera.capture(output3)
-                camera.close()
+                camera_capture(path1 + "/T3.jpg")
+                
                 send_data = 'C'
                 ser.write(send_data.encode())
                 print('Capture done!')
-                t3_result, t3_image, t3_start, t3_end = process_image(output3)
+                t3_result, t3_image, t3_start, t3_end = process_image(path1 + "/T3.jpg")
                 output = path2 + "/T3.jpg"
                 cv2.imwrite(output, t3_image)
                 t3_analysis = Image.open(output)
                 t3_crop = t3_analysis.crop((t3_start[0]-7,t3_start[1]-7,t3_end[0]+7,t3_end[1]+7))
                 
                 crop_width, crop_height = t3_crop.size
-                scale_percent = 77
+                scale_percent = 75
                 width = int(crop_width * scale_percent / 100)
                 height = int(crop_height * scale_percent / 100)
                 display_img = t3_crop.resize((width,height))
@@ -1160,7 +1183,7 @@ def analysis():
                     row_label = [0,0,0,0,0,0]
                     for i in range (0,6):
                         row_text = i+1
-                        row_label[i] = Label(row_labelframe, text=row_text, bg='grey95', width=4, height=2)
+                        row_label[i] = Label(row_labelframe, text=row_text, bg='grey94', width=4, height=2)
                         row_label[i].grid(row=0,column=i,padx=2,pady=2)
                                                         
                     column_label = [0,0,0,0,0,0,0,0]
@@ -1181,7 +1204,7 @@ def analysis():
                             column_text = 'G'
                         if(i==7):
                             column_text = 'H'
-                        column_label[i] = Label(column_labelframe, text=column_text, bg='grey95', width=4, height=2)
+                        column_label[i] = Label(column_labelframe, text=column_text, bg='grey94', width=4, height=2)
                         column_label[i].grid(row=i,column=0,padx=2,pady=2)
 
                     label = list(range(48))
@@ -1282,6 +1305,6 @@ ser = serial.Serial(
 )
 
 ############################################################## Loop ####################################################################
-while True:
-    mainscreen()
-    root.mainloop()
+
+mainscreen()
+root.mainloop()
