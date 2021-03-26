@@ -66,6 +66,8 @@ samples = 0
 createclicked = 0
 directory_old = ""
 div = list(range(48))
+start_point = (0,0)
+end_point = (0,0)
 
 ################################################################ Camera ####################################################################
 def camera_capture(output):
@@ -90,7 +92,7 @@ def sorting_xy(contour):
     return math.sqrt(math.pow(rect_xy[0],2) + math.pow(rect_xy[1],2))
 
 ############################################################# Xử lý ảnh ###################################################################
-def process_image(image_name):
+def process_image(image_name, start_point, end_point):
     image = cv2.imread(image_name)
     #blur_img = cv2.GaussianBlur(image.copy(), (35,35), 0)
     blur_img = cv2.fastNlMeansDenoisingColored(image.copy(),None,15,15,7,21)
@@ -102,13 +104,9 @@ def process_image(image_name):
     contours.sort(key=lambda data:sorting_xy(data))
 
     contour_img = np.zeros_like(gray_img)
-    bourect0 = cv2.boundingRect(contours[0])
-    bourect47 = cv2.boundingRect(contours[len(contours)-1])
-    start_point = (bourect0[0]-10, bourect0[1]-10)  
-    end_point = (bourect47[0]+bourect47[2]+10, bourect47[1]+bourect47[3]+10)
     contour_img = cv2.rectangle(contour_img, start_point, end_point, (255,255,255), -1)
-    rect_w = (bourect47[0]+bourect47[2]+10) - (bourect0[0]-10)
-    rect_h = (bourect47[1]+bourect47[3]+10) - (bourect0[1]-10)
+    rect_w = end_point[0] - start_point[0]
+    rect_h = end_point[1] - start_point[1]
     cell_w = round(rect_w/6)
     cell_h = round(rect_h/8)
     for i in range(1,6):
@@ -145,14 +143,32 @@ def process_image(image_name):
     result_list = list(range(48))
     area = list(range(48))
     
+#     grayprocess_img = cv2.cvtColor(image.copy(), cv2.COLOR_BGR2GRAY)
+#     for i in range(len(sorted_contours1)):
+#         cimg = np.zeros_like(gray_img)
+#         cv2.drawContours(cimg, sorted_contours1, i, color = 255, thickness = -1)
+#         pts = np.where(cimg == 255)
+#         list_intensities.append(grayprocess_img[pts[0], pts[1]])
+#         sum_intensities.append(sum(list_intensities[i]))
+#         area[i]= cv2.contourArea(sorted_contours1[i])
+#         result_list[i] = round((sum_intensities[i])*50/69791)
+
+#     blur1_img = cv2.GaussianBlur(image.copy(), (51,51), 0)
+    blur1_img = cv2.fastNlMeansDenoisingColored(image.copy(),None,10,10,7,21) 
+    hsv_img = cv2.cvtColor(blur1_img, cv2.COLOR_BGR2HSV)
+    list_hsvvalue = []
+    list_index = list(range(48))
     for i in range(len(sorted_contours1)):
+        list_index[i] = []
         cimg = np.zeros_like(gray_img)
         cv2.drawContours(cimg, sorted_contours1, i, color = 255, thickness = -1)
         pts = np.where(cimg == 255)
-        list_intensities.append(gray_img[pts[0], pts[1]])
-        sum_intensities.append(sum(list_intensities[i]))
+        list_hsvvalue.append(hsv_img[pts[0], pts[1]])
+        for j in range(len(list_hsvvalue[i])):
+            list_index[i].append(list_hsvvalue[i][j][2])
+        list_intensities.append(sum(list_index[i]))
         area[i]= cv2.contourArea(sorted_contours1[i])
-        result_list[i] = round((sum_intensities[i])*50/69791)
+        result_list[i] = round((list_intensities[i])*20/48563)
         
 # new led:   
 #     for i in range(len(sorted_contours1)):
@@ -189,24 +205,6 @@ def process_image(image_name):
     for i in range(len(sorted_contours1)):
         if(result_list[i]>99):
             result_list[i]=99
-            
-#     blur1_img = cv2.GaussianBlur(image.copy(), (51,51), 0)
-#     #blur1_img = cv2.fastNlMeansDenoisingColored(image.copy(),None,15,15,7,21) 
-#     hsv_img = cv2.cvtColor(blur1_img, cv2.COLOR_BGR2HSV)
-#     list_hsvvalue = []
-#     list_index = list(range(48))
-#     for i in range(len(sorted_contours1)):
-#         list_index[i] = []
-#         cimg = np.zeros_like(gray_img)
-#         cv2.drawContours(cimg, sorted_contours1, i, color = 255, thickness = -1)
-#         pts = np.where(cimg == 255)
-#         list_hsvvalue.append(hsv_img[pts[0], pts[1]])
-#         for j in range(len(list_hsvvalue[i])):
-#             list_index[i].append(list_hsvvalue[i][j][2])
-#         list_intensities.append(sum(list_index[i]))
-#         area[i]= cv2.contourArea(sorted_contours1[i])
-#         result_list[i] = round((list_intensities[i])*20/48563)
-
 
     for i in range(len(sorted_contours1)):
         if ((i!=0) and ((i+1)%6==0)):
@@ -226,7 +224,7 @@ def process_image(image_name):
 #     for i in range(len(contours)):
 #         cv2.drawContours(blurori_img, contours, i, (255,255,255), thickness = 1)
 
-    return (result_list, blurori_img, start_point, end_point)
+    return (result_list, blurori_img)
 
 ########################################################## Giao diện chính ################################################################
 def mainscreen():
@@ -244,6 +242,7 @@ def mainscreen():
         covid19_canvas['bg'] = 'dodger blue'
         tb_canvas['bg'] = 'dodger blue'
         calibration_canvas['bg'] = 'dodger blue'
+        power_canvas['bg'] = 'dodger blue'
         
         global covid19clicked
         covid19clicked = 0
@@ -264,18 +263,8 @@ def mainscreen():
         logo_label.image = image_select
         logo_label.place(x=250,y=25)
         
-        def shutdown_click():
-            os.system("sudo shutdown -h now")
-        def restart_click():
-            os.system("sudo shutdown -r now")
-        def exit_click():
-            root.destroy()
-        exit_button = Button(homemc_labelframe, fg='white', activebackground="dodger blue", font=('Courier','13','bold'), bg="blue4", text="EXIT", height=3, width=9, borderwidth=0, command=exit_click)
-        exit_button.place(x=120,y=370)
-        shutdown_button = Button(homemc_labelframe, fg='white', activebackground="red", font=('Courier','13','bold'), bg="red3", text="SHUTDOWN", height=3, width=9, borderwidth=0, command=shutdown_click)
-        shutdown_button.place(x=250,y=370)
-        restart_button = Button(homemc_labelframe, fg='white', activebackground="lawn green", font=('Courier','13','bold'), bg="green", text="RESTART", height=3, width=9, borderwidth=0, command=restart_click)
-        restart_button.place(x=380,y=370)
+        newprogram_button = Button(homemc_labelframe, font=("Courier",11,'bold'), bg="lavender", text="NEW PROGRAM", height=4, width=15, borderwidth=0)
+        newprogram_button.place(x=233,y=320)
             
     def covid19_click():
         root.attributes('-fullscreen', True)
@@ -283,6 +272,7 @@ def mainscreen():
         covid19_canvas['bg'] = 'white'
         tb_canvas['bg'] = 'dodger blue'
         calibration_canvas['bg'] = 'dodger blue'
+        power_canvas['bg'] = 'dodger blue'
         
         global covid19clicked
         covid19clicked = 1
@@ -369,7 +359,7 @@ def mainscreen():
                     mainscreen_labelframe.place_forget()
                     settemp()
                         
-        create_button = Button(covid19mc_labelframe, fg='white', activebackground="green yellow", font=("Courier",12,'bold'), bg="lawn green", text="CREATE", height=3, width=11, borderwidth=0, command=create_click)
+        create_button = Button(covid19mc_labelframe, font=("Courier",12,'bold'), bg="lavender", text="CREATE", height=3, width=11, borderwidth=0, command=create_click)
         create_button.place(x=240,y=135)
                    
     def tb_click():
@@ -379,6 +369,7 @@ def mainscreen():
         covid19_canvas['bg'] = 'dodger blue'
         tb_canvas['bg'] = 'white'
         calibration_canvas['bg'] = 'dodger blue'
+        power_canvas['bg'] = 'dodger blue'
         
         global covid19clicked
         covid19clicked = 0
@@ -395,21 +386,33 @@ def mainscreen():
         covid19_canvas['bg'] = 'dodger blue'
         tb_canvas['bg'] = 'dodger blue'
         calibration_canvas['bg'] = 'white'
+        power_canvas['bg'] = 'dodger blue'
         
         calibrationmc_labelframe = LabelFrame(mainscreen_labelframe, bg='white', width=624, height=478)
         calibrationmc_labelframe.place(x=172,y=0)
         
         def calib_click():
-            camera = PiCamera(framerate=Fraction(1,6), sensor_mode=3)
-            camera.rotation = 180
-            camera.iso = 800
-            sleep(2)
-            camera.shutter_speed = 6000000
-            camera.exposure_mode = 'off'
-            camera.capture('calib.jpg')
-            camera.close()
+            camera_capture('calib.jpg')
+        
+            image = cv2.imread('calib.jpg')
+            #blur_img = cv2.GaussianBlur(image.copy(), (35,35), 0)
+            blur_img = cv2.fastNlMeansDenoisingColored(image.copy(),None,15,15,7,21)
+            gray_img = cv2.cvtColor(blur_img, cv2.COLOR_BGR2GRAY)            
+            thresh, binary_img = cv2.threshold(gray_img.copy(), 40, maxval=255, type=cv2.THRESH_BINARY) 
+            contours, hierarchy = cv2.findContours(binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            print("Number of contours: " + str(len(contours)))
+
+            contours.sort(key=lambda data:sorting_xy(data))
+
+            contour_img = np.zeros_like(gray_img)
+            bourect0 = cv2.boundingRect(contours[0])
+            bourect47 = cv2.boundingRect(contours[len(contours)-1])
+            global start_point
+            start_point = (bourect0[0]-8, bourect0[1]-8)
+            global end_point 
+            end_point = (bourect47[0]+bourect47[2]+8, bourect47[1]+bourect47[3]+8)
             
-            calib_result, __,__,__ = process_image('calib.jpg')
+            calib_result, __ = process_image('calib.jpg',start_point, end_point)
             if(max(calib_result) - min(calib_result) >=10):
                 warning = messagebox.askquestion("WARNING: Unstable light intensity! ", "Do you want to exit program?", icon='error')
                 if(warning=='yes'):
@@ -437,32 +440,57 @@ def mainscreen():
                     
                     sheet[pos] = div[i]
                 workbook.save('Calibration_Value.xlsx')
-
                 msg = messagebox.showinfo('Calibration', 'Calibration Done!')
         
-        calib_button = Button(calibrationmc_labelframe, fg='white', font=("Courier",11,'bold'), bg="dodger blue", text="START CALIBRATION", height=4, width=15, borderwidth=0, command=calib_click)
+        calib_button = Button(calibrationmc_labelframe, font=("Courier",11,'bold'), bg="lavender", text="START CALIBRATION", height=4, width=15, borderwidth=0, command=calib_click)
         calib_button.place(x=230,y=320)
+    
+    def power_click():
+        subprocess.Popen(['killall','florence'])
+        root.attributes('-fullscreen', True)
+        home_canvas['bg'] = 'dodger blue'
+        covid19_canvas['bg'] = 'dodger blue'
+        tb_canvas['bg'] = 'dodger blue'
+        calibration_canvas['bg'] = 'dodger blue'
+        power_canvas['bg'] = 'white'
         
+        powermc_labelframe = LabelFrame(mainscreen_labelframe, bg='white', width=624, height=478)
+        powermc_labelframe.place(x=172,y=0)
+        
+        def shutdown_click():
+            os.system("sudo shutdown -h now")
+        def restart_click():
+            os.system("sudo shutdown -r now")
+        def exit_click():
+            root.destroy()
+        exit_button = Button(powermc_labelframe, fg='white', activebackground="dodger blue", font=('Courier','13','bold'), bg="blue4", text="EXIT", height=3, width=9, borderwidth=0, command=exit_click)
+        exit_button.place(x=120,y=280)
+        shutdown_button = Button(powermc_labelframe, fg='white', activebackground="red", font=('Courier','13','bold'), bg="red3", text="SHUTDOWN", height=3, width=9, borderwidth=0, command=shutdown_click)
+        shutdown_button.place(x=250,y=280)
+        restart_button = Button(powermc_labelframe, fg='white', activebackground="lawn green", font=('Courier','13','bold'), bg="green", text="RESTART", height=3, width=9, borderwidth=0, command=restart_click)
+        restart_button.place(x=380,y=280)
         
     home_button = Button(mainscreen_labelframe, bg="dodger blue", activebackground="dodger blue", text="HOME", font=buttonFont, borderwidth=0, height=4, width=20,command=home_click)
-    home_button.place(x=1,y=83)
+    home_button.place(x=1,y=43)
     covid19_button = Button(mainscreen_labelframe, bg="dodger blue", activebackground="dodger blue", text="COVID 19", fg='white', font=buttonFont, borderwidth=0, height=4, width=20, command=covid19_click)
-    covid19_button.place(x=1,y=163)
+    covid19_button.place(x=1,y=123)
     tb_button = Button(mainscreen_labelframe, bg="dodger blue", activebackground="dodger blue", text="TB", fg='white', font=buttonFont, borderwidth=0, height=4, width=20, command=tb_click)
-    tb_button.place(x=1,y=243)
+    tb_button.place(x=1,y=203)
     calibration_button = Button(mainscreen_labelframe, bg="dodger blue", activebackground="dodger blue", text="CALIBRATION", fg='white', font=buttonFont, borderwidth=0, height=4, width=20, command=calibration_click)
-    calibration_button.place(x=1,y=323)
-#     viewresult_button = Button(mainscreen_labelframe, bg="dodger blue", activebackground="dodger blue", text="VIEW RESULT", fg='white', font=buttonFont, borderwidth=0, height=4, width=20, command=viewresult_click)
-#     viewresult_button.place(x=1,y=321)
+    calibration_button.place(x=1,y=283)
+    power_button = Button(mainscreen_labelframe, bg="dodger blue", activebackground="dodger blue", text="POWER", fg='white', font=buttonFont, borderwidth=0, height=4, width=20, command=power_click)
+    power_button.place(x=1,y=363)
     
     home_canvas = Canvas(mainscreen_labelframe, bg="dodger blue", bd=0, highlightthickness=0, height=72, width=13)
-    home_canvas.place(x=1,y=85)
+    home_canvas.place(x=1,y=45)
     covid19_canvas = Canvas(mainscreen_labelframe, bg="dodger blue", bd=0, highlightthickness=0, height=72, width=13)
-    covid19_canvas.place(x=1,y=165)
+    covid19_canvas.place(x=1,y=125)
     tb_canvas = Canvas(mainscreen_labelframe, bg="dodger blue", bd=0, highlightthickness=0, height=72, width=13)
-    tb_canvas.place(x=1,y=245)
+    tb_canvas.place(x=1,y=205)
     calibration_canvas = Canvas(mainscreen_labelframe, bg="dodger blue", bd=0, highlightthickness=0, height=72, width=13)
-    calibration_canvas.place(x=1,y=325)
+    calibration_canvas.place(x=1,y=285)
+    power_canvas = Canvas(mainscreen_labelframe, bg="dodger blue", bd=0, highlightthickness=0, height=72, width=13)
+    power_canvas.place(x=1,y=365)
 
     global covid19clicked
     global tbclicked
@@ -651,9 +679,9 @@ def settemp():
             fw.writelines("T2="+t2_entry.get()[0:2]+"\n")
             fw.writelines("T3="+t3_entry.get()[0:2]+"\n")
         
-    back_button = Button(settemp_labelframe, font=('Courier','12','bold'), bg="dodger blue", text="Back" , height=3, width=11, borderwidth=0, command=back_click)
+    back_button = Button(settemp_labelframe, font=('Courier','12','bold'), bg="lavender", text="Back" , height=3, width=11, borderwidth=0, command=back_click)
     back_button.place(x=14,y=406)
-    next_button = Button(settemp_labelframe, font=('Courier','12','bold'), bg="dodger blue", text="Next", height=3, width=11, borderwidth=0, command=thread)
+    next_button = Button(settemp_labelframe, font=('Courier','12','bold'), bg="lavender", text="Next", height=3, width=11, borderwidth=0, command=thread)
     next_button.place(x=647,y=406)
     save_button = Button(settemp_labelframe, activebackground="gold", font=('Courier','12','bold'), bg="yellow", text="Save", height=3, width=11, borderwidth=0,command=save_click)
     save_button.place(x=332,y=406)
@@ -698,7 +726,7 @@ def scanposition():
     def back_click():
         scanposition_labelframe.place_forget()
         settemp()
-    back_button = Button(scanposition_labelframe, font=("Courier",12,'bold'), bg="dodger blue", text="Back" , height=3, width=11, borderwidth=0, command=back_click)
+    back_button = Button(scanposition_labelframe, font=("Courier",12,'bold'), bg="lavender", text="Back" , height=3, width=11, borderwidth=0, command=back_click)
     back_button.place(x=14,y=406)
 
     send_data = 'P'
@@ -734,11 +762,29 @@ def scanposition():
         
         camera_capture(path4 + "/Sample_original.jpg")
         
-        scanposition_progressbar['value'] = 40
+        image = cv2.imread(path4 + "/Sample_original.jpg")
+        #blur_img = cv2.GaussianBlur(image.copy(), (35,35), 0)
+        blur_img = cv2.fastNlMeansDenoisingColored(image.copy(),None,15,15,7,21)
+        gray_img = cv2.cvtColor(blur_img, cv2.COLOR_BGR2GRAY)            
+        thresh, binary_img = cv2.threshold(gray_img.copy(), 40, maxval=255, type=cv2.THRESH_BINARY) 
+        contours, hierarchy = cv2.findContours(binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        print("Number of contours: " + str(len(contours)))
+
+        contours.sort(key=lambda data:sorting_xy(data))
+
+        contour_img = np.zeros_like(gray_img)
+        bourect0 = cv2.boundingRect(contours[0])
+        bourect47 = cv2.boundingRect(contours[len(contours)-1])
+        global start_point
+        start_point = (bourect0[0]-8, bourect0[1]-8)
+        global end_point 
+        end_point = (bourect47[0]+bourect47[2]+8, bourect47[1]+bourect47[3]+8)
+        
+        scanposition_progressbar['value'] = 35
         root.update_idletasks()
 
         global pos_result
-        pos_result, pos_image,__,__ = process_image(path4 + "/Sample_original.jpg")
+        pos_result, pos_image = process_image(path4 + "/Sample_original.jpg", start_point, end_point)
         scanposition_progressbar['value'] = 60
         root.update_idletasks()
         sleep(1)
@@ -808,7 +854,7 @@ def scanposition():
             createclicked = 0
             scanposition_labelframe.place_forget()   
             analysis()
-        next_button = Button(scanposition_labelframe, font=("Courier",12,'bold'), bg="dodger blue", text="Next", height=3, width=11, borderwidth=0,command=thread)
+        next_button = Button(scanposition_labelframe, font=("Courier",12,'bold'), bg="lavender", text="Next", height=3, width=11, borderwidth=0,command=thread)
         next_button.place(x=647,y=406)
 
 ################################################### Giao diện phân tích mẫu ###########################################################
@@ -826,13 +872,13 @@ def analysis():
     t_labelframe = LabelFrame(analysis_labelframe, bg='white', width=798, height=298)
     t_labelframe.place(x=0,y=70)
 
-    t1_labelframe = LabelFrame(t_labelframe, bg='white',text="T1:"+t1_set+chr(176)+'C' , font=("Courier",13,'bold'), width=197, height=280)
+    t1_labelframe = LabelFrame(t_labelframe, bg='white',text="T1:"+t1_set+chr(176)+'C' , font=("Courier",13,'bold'), width=197, height=290)
     t1_labelframe.place(x=0,y=2)
-    t2_labelframe = LabelFrame(t_labelframe, bg='white',text="T2:"+t2_set+chr(176)+'C' , font=("Courier",13,'bold'), width=197, height=280)
+    t2_labelframe = LabelFrame(t_labelframe, bg='white',text="T2:"+t2_set+chr(176)+'C' , font=("Courier",13,'bold'), width=197, height=290)
     t2_labelframe.place(x=199,y=2)
-    t3_labelframe = LabelFrame(t_labelframe, bg='white',text="T3:"+t3_set+chr(176)+'C' , font=("Courier",13,'bold'), width=197, height=280)
+    t3_labelframe = LabelFrame(t_labelframe, bg='white',text="T3:"+t3_set+chr(176)+'C' , font=("Courier",13,'bold'), width=197, height=290)
     t3_labelframe.place(x=398,y=2)
-    t4_labelframe = LabelFrame(t_labelframe, bg='white smoke',text="T4", width=197, height=280)
+    t4_labelframe = LabelFrame(t_labelframe, bg='white smoke',text="T4", width=197, height=290)
     t4_labelframe.place(x=597,y=2)
     t1wait_label = Label(t1_labelframe, text='...', fg='grey36', bg='white', font=("Courier",40,'bold'))
     t1wait_label.place(x=46,y=110)
@@ -841,7 +887,7 @@ def analysis():
     t3wait_label = Label(t3_labelframe, text='...', fg='grey36', bg='white', font=("Courier",40,'bold'))
     t3wait_label.place(x=46,y=110)
     temp_label = Label(analysis_labelframe, bg='white', fg='grey36', font=("Courier",20,'bold'))
-    temp_label.place(x=17,y=392)
+    temp_label.place(x=65,y=389)
 
     def stop_click():
         global ser
@@ -878,16 +924,16 @@ def analysis():
         receive_data = ser.readline().decode('utf-8').rstrip()
         print("Data received:", receive_data)        
         if(receive_data=='Y'):
-            autoprocess_label = Label(analysis_labelframe, bg='white', text="Program is automatically processing...", fg='blue', font=("Courier",12,'bold'))
-            autoprocess_label.place(x=17,y=445)
+            autoprocess_label = Label(analysis_labelframe, bg='white', text="Program is processing...", fg='blue', font=("Courier",12,'bold'))
+            autoprocess_label.place(x=65,y=438)
             wait = 1
     while(wait!=1):
         if(ser.in_waiting>0):
             receive_data = ser.readline().decode('utf-8').rstrip()
             print("Data received:", receive_data)        
             if(receive_data=='Y'):
-                autoprocess_label = Label(analysis_labelframe, bg='white', text="Program is automatically processing...", fg='blue', font=("Courier",12,'bold'))
-                autoprocess_label.place(x=17,y=445)
+                autoprocess_label = Label(analysis_labelframe, bg='white', text="Program is processing...", fg='blue', font=("Courier",12,'bold'))
+                autoprocess_label.place(x=65,y=438)
                 wait = 1
                 break
 
@@ -897,7 +943,7 @@ def analysis():
             #print("Data received:", receive_data)
             if(receive_data!='C1' and receive_data!='C2' and receive_data!='C3'):
                 print("Data received:", receive_data)
-                temp_label['text'] = 'Temperature: '+ receive_data+ ' ' + chr(176)+'C'
+                temp_label['text'] = 'Temperature: '+ receive_data + chr(176)+'C'
                 root.update()
                 
             if(receive_data=='C1'):
@@ -917,15 +963,17 @@ def analysis():
                 send_data = 'C'
                 ser.write(send_data.encode())
                 print('Capture done!')
-
-                t1_result, t1_image, t1_start, t1_end = process_image(path1 + "/T1.jpg")
+                
+                global start_point
+                global end_point 
+                t1_result, t1_image= process_image(path1 + "/T1.jpg", start_point, end_point)
 
                 global path2
                 output = path2 + "/T1.jpg"
                 cv2.imwrite(output, t1_image)
 
                 t1_analysis = Image.open(output)
-                t1_crop = t1_analysis.crop((t1_start[0]-7,t1_start[1]-7,t1_end[0]+7,t1_end[1]+7))   
+                t1_crop = t1_analysis.crop((start_point[0]-7, start_point[1]-7, end_point[0]+7, end_point[1]+7))   
                 crop_width, crop_height = t1_crop.size
                 scale_percent = 75
                 width = int(crop_width * scale_percent / 100)
@@ -990,11 +1038,11 @@ def analysis():
                 send_data = 'C'
                 ser.write(send_data.encode())
                 print('Capture done!')
-                t2_result, t2_image, t2_start, t2_end = process_image(path1 + "/T2.jpg")
+                t2_result, t2_image = process_image(path1 + "/T2.jpg", start_point, end_point)
                 output = path2 + "/T2.jpg"
                 cv2.imwrite(output, t2_image)
                 t2_analysis = Image.open(output)
-                t2_crop = t2_analysis.crop((t2_start[0]-7,t2_start[1]-7,t2_end[0]+7,t2_end[1]+7))
+                t2_crop = t2_analysis.crop((start_point[0]-7, start_point[1]-7, end_point[0]+7, end_point[1]+7))
 
                 crop_width, crop_height = t2_crop.size
                 scale_percent = 75
@@ -1061,11 +1109,11 @@ def analysis():
                 send_data = 'C'
                 ser.write(send_data.encode())
                 print('Capture done!')
-                t3_result, t3_image, t3_start, t3_end = process_image(path1 + "/T3.jpg")
+                t3_result, t3_image = process_image(path1 + "/T3.jpg", start_point, end_point)
                 output = path2 + "/T3.jpg"
                 cv2.imwrite(output, t3_image)
                 t3_analysis = Image.open(output)
-                t3_crop = t3_analysis.crop((t3_start[0]-7,t3_start[1]-7,t3_end[0]+7,t3_end[1]+7))
+                t3_crop = t3_analysis.crop((start_point[0]-7, start_point[1]-7, end_point[0]+7, end_point[1]+7))
                 
                 crop_width, crop_height = t3_crop.size
                 scale_percent = 75
@@ -1245,7 +1293,7 @@ def analysis():
                     
                     def detail_click():
                         if(detail_button['bg']=='lawn green'):
-                            detail_button['bg']='lavender'
+                            detail_button['bg']='grey94'
                             for i in range (0,48):
                                 if(pos_result[i]<=12):
                                     label[i]['text'] = 'N/A' 
@@ -1279,7 +1327,7 @@ def analysis():
                                     if(t1_result[i]>25 and t2_result[i]>25 and t3_result[i]>28):
                                         label[i]['text'] = str('%d'%t3_result[i])
                                         
-                    detail_button = Button(analysis_labelframe, activebackground="white", bg="lavender", text="DETAIL", height=3, width=10, borderwidth=0, command=detail_click)
+                    detail_button = Button(analysis_labelframe, activebackground="white", bg="grey94", text="DETAIL", height=3, width=10, borderwidth=0, command=detail_click)
                     detail_button.place(x=360,y=396)
                     root.update_idletasks()
                     subprocess.call(["scrot",path3+"/result.jpg"])
