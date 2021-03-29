@@ -43,13 +43,7 @@ s.theme_use('clam')
 ########################################################## Biến toàn cục ################################################################# 
 covid19clicked = 0
 tbclicked = 0
-viewresultclicked = 0
-t1 = '30'
-t2 = '50'
-t3 = '73'
-t1_set = t1
-t2_set = t2
-t3_set = t3
+viewresultclicked = 0 
 temp_label = 0
 name = "/"
 entry_num = 0
@@ -70,6 +64,10 @@ start_point = (0,0)
 end_point = (0,0)
 
 ################################################################ Camera ####################################################################
+try:
+    camera.close()
+except Exception:
+    pass
 def camera_capture(output):
     camera = PiCamera(framerate=Fraction(1,6), sensor_mode=3)
     camera.rotation = 180
@@ -77,6 +75,7 @@ def camera_capture(output):
     sleep(2)
     camera.shutter_speed = 6000000
     camera.exposure_mode = 'off'
+    #sleep(40)
     camera.capture(output)
     camera.close()
 
@@ -94,10 +93,10 @@ def sorting_xy(contour):
 ############################################################# Xử lý ảnh ###################################################################
 def process_image(image_name, start_point, end_point):
     image = cv2.imread(image_name)
-    #blur_img = cv2.GaussianBlur(image.copy(), (35,35), 0)
-    blur_img = cv2.fastNlMeansDenoisingColored(image.copy(),None,15,15,7,21)
+    blur_img = cv2.GaussianBlur(image.copy(), (35,35), 0)
+    #blur_img = cv2.fastNlMeansDenoisingColored(image.copy(),None,10,10,7,21)
     gray_img = cv2.cvtColor(blur_img, cv2.COLOR_BGR2GRAY)            
-    thresh, binary_img = cv2.threshold(gray_img.copy(), 40, maxval=255, type=cv2.THRESH_BINARY) 
+    thresh, binary_img = cv2.threshold(gray_img.copy(), 30, maxval=255, type=cv2.THRESH_BINARY) 
     contours, hierarchy = cv2.findContours(binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     print("Number of contours: " + str(len(contours)))
 
@@ -153,8 +152,8 @@ def process_image(image_name, start_point, end_point):
 #         area[i]= cv2.contourArea(sorted_contours1[i])
 #         result_list[i] = round((sum_intensities[i])*50/69791)
 
-#     blur1_img = cv2.GaussianBlur(image.copy(), (51,51), 0)
-    blur1_img = cv2.fastNlMeansDenoisingColored(image.copy(),None,10,10,7,21) 
+    #blur1_img = cv2.GaussianBlur(image.copy(), (25,25), 0)
+    blur1_img = cv2.fastNlMeansDenoisingColored(image.copy(),None,15,15,7,21) 
     hsv_img = cv2.cvtColor(blur1_img, cv2.COLOR_BGR2HSV)
     list_hsvvalue = []
     list_index = list(range(48))
@@ -168,7 +167,7 @@ def process_image(image_name, start_point, end_point):
             list_index[i].append(list_hsvvalue[i][j][2])
         list_intensities.append(sum(list_index[i]))
         area[i]= cv2.contourArea(sorted_contours1[i])
-        result_list[i] = round((list_intensities[i])*20/48563)
+        result_list[i] = round((list_intensities[i])*20/36880)
         
 # new led:   
 #     for i in range(len(sorted_contours1)):
@@ -202,9 +201,9 @@ def process_image(image_name, start_point, end_point):
 #            or i==33 or i==34):
 #             result_list[i] = round(result_list[i]*1.11)
   
-    for i in range(len(sorted_contours1)):
-        if(result_list[i]>99):
-            result_list[i]=99
+#     for i in range(len(sorted_contours1)):
+#         if(result_list[i]>99):
+#             result_list[i]=99
 
     for i in range(len(sorted_contours1)):
         if ((i!=0) and ((i+1)%6==0)):
@@ -408,39 +407,51 @@ def mainscreen():
             bourect0 = cv2.boundingRect(contours[0])
             bourect47 = cv2.boundingRect(contours[len(contours)-1])
             global start_point
-            start_point = (bourect0[0]-8, bourect0[1]-8)
+            start_point = (bourect0[0]-6, bourect0[1]-6)
             global end_point 
-            end_point = (bourect47[0]+bourect47[2]+8, bourect47[1]+bourect47[3]+8)
+            end_point = (bourect47[0]+bourect47[2]+6, bourect47[1]+bourect47[3]+6)
             
-            calib_result, __ = process_image('calib.jpg',start_point, end_point)
-            if(max(calib_result) - min(calib_result) >=10):
-                warning = messagebox.askquestion("WARNING: Unstable light intensity! ", "Do you want to exit program?", icon='error')
-                if(warning=='yes'):
-                    root.destroy()
-            else:
-                global div
-                for i in range(0,48):
-                    div[i] = round(calib_result[21]/calib_result[i],2)
-                    if(i<6):
-                        pos = str(chr(65+i+1)) + "2"
-                    if(i>=6 and i<12):
-                        pos = str(chr(65+i-5)) + "3"
-                    if(i>=12 and i<18):
-                        pos = str(chr(65+i-11)) + "4"
-                    if(i>=18 and i<24):
-                        pos = str(chr(65+i-17)) + "5"
-                    if(i>=24 and i<30):
-                        pos = str(chr(65+i-23)) + "6"
-                    if(i>=30 and i<36):
-                        pos = str(chr(65+i-29)) + "7"
-                    if(i>=36 and i<42):
-                        pos = str(chr(65+i-35)) + "8"
-                    if(i>=42):
-                        pos = str(chr(65+i-41)) + "9"
+            calib_result, __ = process_image('calib.jpg',(279,77), (508,385))
+            
+            err=0
+            for i in range (len(calib_result)):
+                if(abs(calib_result[i]-20) >=10):
+                    err = 1
                     
-                    sheet[pos] = div[i]
-                workbook.save('Calibration_Value.xlsx')
-                msg = messagebox.showinfo('Calibration', 'Calibration Done!')
+            if (err == 1):
+                warning = messagebox.askquestion("WARNING(1): Unstable light intensity! ", "Do you want to exit program?", icon='error')
+                if(warning=='yes'):
+                    err = 0
+                    root.destroy()
+            else:       
+                if(max(calib_result) - min(calib_result) >=10):
+                    warning = messagebox.askquestion("WARNING(2): Unstable light intensity! ", "Do you want to exit program?", icon='error')
+                    if(warning=='yes'):
+                        root.destroy()
+                else:
+                    global div
+                    for i in range(0,48):
+                        div[i] = round(calib_result[21]/calib_result[i],2)
+                        if(i<6):
+                            pos = str(chr(65+i+1)) + "2"
+                        if(i>=6 and i<12):
+                            pos = str(chr(65+i-5)) + "3"
+                        if(i>=12 and i<18):
+                            pos = str(chr(65+i-11)) + "4"
+                        if(i>=18 and i<24):
+                            pos = str(chr(65+i-17)) + "5"
+                        if(i>=24 and i<30):
+                            pos = str(chr(65+i-23)) + "6"
+                        if(i>=30 and i<36):
+                            pos = str(chr(65+i-29)) + "7"
+                        if(i>=36 and i<42):
+                            pos = str(chr(65+i-35)) + "8"
+                        if(i>=42):
+                            pos = str(chr(65+i-41)) + "9"
+                        
+                        sheet[pos] = div[i]
+                    workbook.save('Calibration_Value.xlsx')
+                    msg = messagebox.showinfo('Calibration', 'Calibration Done!')
         
         calib_button = Button(calibrationmc_labelframe, font=("Courier",11,'bold'), bg="lavender", text="START CALIBRATION", height=4, width=15, borderwidth=0, command=calib_click)
         calib_button.place(x=230,y=320)
@@ -470,7 +481,7 @@ def mainscreen():
         restart_button = Button(powermc_labelframe, fg='white', activebackground="lawn green", font=('Courier','13','bold'), bg="green", text="RESTART", height=3, width=9, borderwidth=0, command=restart_click)
         restart_button.place(x=380,y=280)
         
-    home_button = Button(mainscreen_labelframe, bg="dodger blue", activebackground="dodger blue", text="HOME", font=buttonFont, borderwidth=0, height=4, width=20,command=home_click)
+    home_button = Button(mainscreen_labelframe, bg="dodger blue", activebackground="dodger blue", text="HOME", fg='white', font=buttonFont, borderwidth=0, height=4, width=20,command=home_click)
     home_button.place(x=1,y=43)
     covid19_button = Button(mainscreen_labelframe, bg="dodger blue", activebackground="dodger blue", text="COVID 19", fg='white', font=buttonFont, borderwidth=0, height=4, width=20, command=covid19_click)
     covid19_button.place(x=1,y=123)
@@ -724,6 +735,10 @@ def scanposition():
     scanposition_progressbar.place(x=299,y=408)
 
     def back_click():
+        try:
+            camera.close()
+        except Exception:
+            pass
         scanposition_labelframe.place_forget()
         settemp()
     back_button = Button(scanposition_labelframe, font=("Courier",12,'bold'), bg="lavender", text="Back" , height=3, width=11, borderwidth=0, command=back_click)
@@ -759,8 +774,12 @@ def scanposition():
     while(wait==1):
         process_label = Label(scanposition_labelframe, text='Processing...', bg='white', font=("Courier",13))
         process_label.place(x=333,y=440)
-        
-        camera_capture(path4 + "/Sample_original.jpg")
+        try:
+            camera_capture(path4 + "/Sample_original.jpg")
+        except Exception as e :
+            error = messagebox.askquestion("Error: Camera out of resoure", "Do you want to restart the divice?", icon = "error")
+            if(error=='yes'):
+                os.system("sudo shutdown -r now")
         
         image = cv2.imread(path4 + "/Sample_original.jpg")
         #blur_img = cv2.GaussianBlur(image.copy(), (35,35), 0)
@@ -776,10 +795,11 @@ def scanposition():
         bourect0 = cv2.boundingRect(contours[0])
         bourect47 = cv2.boundingRect(contours[len(contours)-1])
         global start_point
-        start_point = (bourect0[0]-8, bourect0[1]-8)
+        start_point = (bourect0[0]-6, bourect0[1]-6)
         global end_point 
-        end_point = (bourect47[0]+bourect47[2]+8, bourect47[1]+bourect47[3]+8)
-        
+        end_point = (bourect47[0]+bourect47[2]+6, bourect47[1]+bourect47[3]+6)
+        print('Start point:', start_point)
+        print('End point:', end_point)
         scanposition_progressbar['value'] = 35
         root.update_idletasks()
 
@@ -839,7 +859,7 @@ def scanposition():
         result_table(36,42,6)
         result_table(42,48,7)
         global samples
-        samplenum_label = Label(scanposition_labelframe, text='Number of Samples: ' + str(samples-2), fg='dodger blue', bg='white', font=("Courier",13))
+        samplenum_label = Label(scanposition_labelframe, text='Number of Samples: ' + str(samples), fg='dodger blue', bg='white', font=("Courier",13))
         samplenum_label.place(x=293,y=432)
         scan_label.place_forget()
         scanposition_progressbar.place_forget()
