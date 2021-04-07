@@ -17,6 +17,7 @@ import os
 from tkinter import ttk
 import awesometkinter as atk
 import tkinter.font as font
+import openpyxl
 from openpyxl import Workbook, load_workbook
 import subprocess
 import shutil
@@ -62,12 +63,33 @@ directory_old = ""
 div = list(range(48))
 start_point = (0,0)
 end_point = (0,0)
+calibrationclicked = 0
+default_value = list(range(48))
+
+workbook = openpyxl.load_workbook('/home/pi/Desktop/sc48/Calibration_Value.xlsx')
+sheet = workbook.active
+for i in range(0,48):
+    if(i<6):
+        pos = str(chr(65+i+1)) + "2"
+    if(i>=6 and i<12):
+        pos = str(chr(65+i-5)) + "3"
+    if(i>=12 and i<18):
+        pos = str(chr(65+i-11)) + "4"
+    if(i>=18 and i<24):
+        pos = str(chr(65+i-17)) + "5"
+    if(i>=24 and i<30):
+        pos = str(chr(65+i-23)) + "6"
+    if(i>=30 and i<36):
+        pos = str(chr(65+i-29)) + "7"
+    if(i>=36 and i<42):
+        pos = str(chr(65+i-35)) + "8"
+    if(i>=42):
+        pos = str(chr(65+i-41)) + "9"
+        
+    default_value[i] = int(sheet[pos].value)
+print('Default intensities value: ',default_value)
 
 ################################################################ Camera ####################################################################
-try:
-    camera.close()
-except Exception:
-    pass
 def camera_capture(output):
     camera = PiCamera(framerate=Fraction(1,6), sensor_mode=3)
     camera.rotation = 180
@@ -92,6 +114,9 @@ def sorting_xy(contour):
 
 ############################################################# Xử lý ảnh ###################################################################
 def process_image(image_name, start_point, end_point):
+    global default_value
+    global calibrationclicked
+    
     image = cv2.imread(image_name)
     blur_img = cv2.GaussianBlur(image.copy(), (35,35), 0)
     #blur_img = cv2.fastNlMeansDenoisingColored(image.copy(),None,10,10,7,21)
@@ -167,8 +192,14 @@ def process_image(image_name, start_point, end_point):
             list_index[i].append(list_hsvvalue[i][j][2])
         list_intensities.append(sum(list_index[i]))
         area[i]= cv2.contourArea(sorted_contours1[i])
-        result_list[i] = round((list_intensities[i])*20/36880)
-        
+        if(calibrationclicked==0):
+            result_list[i] = round((list_intensities[i])*20/36880)-default_value[i]
+#             if(result_list[i]<0):
+#                 result_list[i]=0
+        else:
+            result_list[i] = round((list_intensities[i])*20/36880)
+            
+            
 # new led:   
 #     for i in range(len(sorted_contours1)):
 #         if(i==0 or i==1):
@@ -187,23 +218,13 @@ def process_image(image_name, start_point, end_point):
     
 # old led:
 #     for i in range(len(sorted_contours1)):
-#         if(i==0 or i==1 or i==4 or i==11):
-#             result_list[i] = round(result_list[i]*1.24)
-#         if(i==2 or i==3 or i==7 or i==6 or i==12 or i==38 or i==46 or i==47):
-#             result_list[i] = round(result_list[i]*1.17)
-#         if(i==5):
-#             result_list[i] = round(result_list[i]*1.4)
-#         if(i==9 or i==10 or i==13 or i==16 or i==17 or i==18 or i==23
-#            or i==30 or i==31 or i==36 or i==37 or i==39 or i==40 or i==41
-#            or i==42 or i==43 or i==44 or i==45):
-#             result_list[i] = round(result_list[i]*1.11)
-#         if(i==14 or i==15 or i==19 or i==22 or i==24 or i==29 or i==32
-#            or i==33 or i==34):
-#             result_list[i] = round(result_list[i]*1.11)
+#         if(i==6 or i==9 or i==10 or i==12 or i==22 or i==24 or i==28 or
+#            i==30):
+#             result_list[i] *= 1.077
   
-#     for i in range(len(sorted_contours1)):
-#         if(result_list[i]>99):
-#             result_list[i]=99
+    for i in range(len(sorted_contours1)):
+        if(result_list[i]>99):
+            result_list[i]=99
 
     for i in range(len(sorted_contours1)):
         if ((i!=0) and ((i+1)%6==0)):
@@ -391,6 +412,8 @@ def mainscreen():
         calibrationmc_labelframe.place(x=172,y=0)
         
         def calib_click():
+            global calibrationclicked
+            calibrationclicked = 1
             camera_capture('calib.jpg')
         
             image = cv2.imread('calib.jpg')
@@ -413,46 +436,29 @@ def mainscreen():
             
             calib_result, __ = process_image('calib.jpg',(279,77), (508,385))
             
-            err=0
-            for i in range (len(calib_result)):
-                if(abs(calib_result[i]-20) >=10):
-                    err = 1
-                    
-            if (err == 1):
-                warning = messagebox.askquestion("WARNING(1): Unstable light intensity! ", "Do you want to exit program?", icon='error')
-                if(warning=='yes'):
-                    err = 0
-                    root.destroy()
-            else:       
-                if(max(calib_result) - min(calib_result) >=10):
-                    warning = messagebox.askquestion("WARNING(2): Unstable light intensity! ", "Do you want to exit program?", icon='error')
-                    if(warning=='yes'):
-                        root.destroy()
-                else:
-                    global div
-                    for i in range(0,48):
-                        div[i] = round(calib_result[21]/calib_result[i],2)
-                        if(i<6):
-                            pos = str(chr(65+i+1)) + "2"
-                        if(i>=6 and i<12):
-                            pos = str(chr(65+i-5)) + "3"
-                        if(i>=12 and i<18):
-                            pos = str(chr(65+i-11)) + "4"
-                        if(i>=18 and i<24):
-                            pos = str(chr(65+i-17)) + "5"
-                        if(i>=24 and i<30):
-                            pos = str(chr(65+i-23)) + "6"
-                        if(i>=30 and i<36):
-                            pos = str(chr(65+i-29)) + "7"
-                        if(i>=36 and i<42):
-                            pos = str(chr(65+i-35)) + "8"
-                        if(i>=42):
-                            pos = str(chr(65+i-41)) + "9"
-                        
-                        sheet[pos] = div[i]
-                    workbook.save('Calibration_Value.xlsx')
-                    msg = messagebox.showinfo('Calibration', 'Calibration Done!')
-        
+            for i in range(0,48):
+                if(i<6):
+                    pos = str(chr(65+i+1)) + "2"
+                if(i>=6 and i<12):
+                    pos = str(chr(65+i-5)) + "3"
+                if(i>=12 and i<18):
+                    pos = str(chr(65+i-11)) + "4"
+                if(i>=18 and i<24):
+                    pos = str(chr(65+i-17)) + "5"
+                if(i>=24 and i<30):
+                    pos = str(chr(65+i-23)) + "6"
+                if(i>=30 and i<36):
+                    pos = str(chr(65+i-29)) + "7"
+                if(i>=36 and i<42):
+                    pos = str(chr(65+i-35)) + "8"
+                if(i>=42):
+                    pos = str(chr(65+i-41)) + "9"
+                
+                sheet[pos] = calib_result[i]
+            workbook.save('Calibration_Value.xlsx')
+            calibrationclicked  = 0
+            msg = messagebox.showinfo('Calibration Done', 'Close the app and reboot!')
+            root.destroy()
         calib_button = Button(calibrationmc_labelframe, font=("Courier",11,'bold'), bg="lavender", text="START CALIBRATION", height=4, width=15, borderwidth=0, command=calib_click)
         calib_button.place(x=230,y=320)
     
@@ -777,7 +783,7 @@ def scanposition():
         try:
             camera_capture(path4 + "/Sample_original.jpg")
         except Exception as e :
-            error = messagebox.askquestion("Error: Camera out of resoure", "Do you want to restart the divice?", icon = "error")
+            error = messagebox.askquestion("Error: "+ str(e), "Do you want to restart the divice?", icon = "error")
             if(error=='yes'):
                 os.system("sudo shutdown -r now")
         
@@ -911,7 +917,7 @@ def analysis():
 
     def stop_click():
         global ser
-        msgbox = messagebox.askquestion('Stop the process','Are you want to stop the analysis ?', icon = 'warning')
+        msgbox = messagebox.askquestion('Stop the process','Do you want to stop the analysis ?', icon = 'question')
         if(msgbox=='yes'):
             send_data ='S'
             ser.write(send_data.encode())
@@ -928,9 +934,9 @@ def analysis():
             send_data ='R'
             ser.write(send_data.encode())
             pause_button['text']= 'Pause'
-    pause_button = Button(analysis_labelframe, bg="yellow", font=("Courier",12,'bold'), text="Pause" , height=3, width=10, borderwidth=0, command=pause_click)
+    pause_button = Button(analysis_labelframe, bg="lavender", font=("Courier",12,'bold'), text="Pause" , height=3, width=10, borderwidth=0, command=pause_click)
     pause_button.place(x=450,y=390)
-    stop_button = Button(analysis_labelframe, bg="red", font=("Courier",12,'bold'), text="Stop", height=3, width=10, borderwidth=0, command=stop_click)
+    stop_button = Button(analysis_labelframe, bg="lavender", font=("Courier",12,'bold'), text="STOP", height=3, width=10, borderwidth=0, command=stop_click)
     stop_button.place(x=590,y=390)
     root.update()
     
@@ -1226,7 +1232,7 @@ def analysis():
                     root.update_idletasks()
                     
                     def finish_click():
-                        msgbox = messagebox.askquestion('Finish','Are you want to return to the main menu ?', icon = 'warning')
+                        msgbox = messagebox.askquestion('Finish','Do you want to return to the main menu?', icon = 'question')
                         if(msgbox=='yes'):
                             global foldername
                             global covid19clicked
@@ -1373,6 +1379,5 @@ ser = serial.Serial(
 )
 
 ############################################################## Loop ####################################################################
-
 mainscreen()
 root.mainloop()
