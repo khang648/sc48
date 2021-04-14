@@ -73,6 +73,7 @@ start_point = (0,0)
 end_point = (0,0)
 calibrationclicked = 0
 coefficient_value = list(range(48))
+thr3l_set = 30
 
 workbook = openpyxl.load_workbook('/home/pi/Desktop/sc48/Calibration_Value.xlsx')
 sheet = workbook.active
@@ -121,7 +122,7 @@ def sorting_xy(contour):
     return math.sqrt(math.pow(rect_xy[0],2) + math.pow(rect_xy[1],2))
 
 ############################################################# Xử lý ảnh ###################################################################
-def process_image(image_name, start_point=(282,79), end_point=(515,392)):
+def process_image(image_name, start_point=(282,79), end_point=(514,391)):
     global coefficient_value
     global calibrationclicked
     
@@ -175,44 +176,47 @@ def process_image(image_name, start_point=(282,79), end_point=(515,392)):
     result_list = list(range(48))
     area = list(range(48))
     
-#     grayprocess_img = cv2.cvtColor(image.copy(), cv2.COLOR_BGR2GRAY)
-#     for i in range(len(sorted_contours1)):
-#         cimg = np.zeros_like(gray_img)
-#         cv2.drawContours(cimg, sorted_contours1, i, color = 255, thickness = -1)
-#         pts = np.where(cimg == 255)
-#         list_intensities.append(grayprocess_img[pts[0], pts[1]])
-#         sum_intensities.append(sum(list_intensities[i]))
-#         area[i]= cv2.contourArea(sorted_contours1[i])
-#         result_list[i] = round((sum_intensities[i])*50/69791)
-
     tmp_list = list(range(48))
-    #blur1_img = cv2.fastNlMeansDenoisingColored(image.copy(),None,15,15,9,25) 
-    #cv2.imwrite("mau1.jpg",blur1_img)
-    blur1_img = cv2.GaussianBlur(image.copy(), (13,13), 0)
-    cv2.imwrite("mau2.jpg",blur_img)
-    hsv_img = cv2.cvtColor(blur1_img, cv2.COLOR_BGR2HSV)
-    list_hsvvalue = []
-    list_index = list(range(48))
+    blur1_img = cv2.GaussianBlur(image.copy(), (11,11), 0)
+    grayprocess_img = cv2.cvtColor(blur1_img, cv2.COLOR_BGR2GRAY)
     for i in range(len(sorted_contours1)):
-        list_index[i] = []
         cimg = np.zeros_like(gray_img)
         cv2.drawContours(cimg, sorted_contours1, i, color = 255, thickness = -1)
         pts = np.where(cimg == 255)
-        list_hsvvalue.append(hsv_img[pts[0], pts[1]])
-        for j in range(len(list_hsvvalue[i])):
-            list_index[i].append(list_hsvvalue[i][j][2])
-        list_intensities.append(sum(list_index[i]))
-        #area[i]= cv2.contourArea(sorted_contours1[i])
-        result_list[i] = list_intensities[i]
-        tmp_list[i] = list_intensities[i]/1000
+        list_intensities.append(grayprocess_img[pts[0], pts[1]])
+        sum_intensities.append(sum(list_intensities[i]))
+        area[i]= cv2.contourArea(sorted_contours1[i])
+        #result_list[i] = round((sum_intensities[i])*50/69791)
+        tmp_list[i] = sum_intensities[i]/1000
         result_list[i] = round(tmp_list[i])
-        
-             
+
+#     tmp_list = list(range(48))
+#     #blur1_img = cv2.fastNlMeansDenoisingColored(image.copy(),None,15,15,9,25) 
+#     #cv2.imwrite("mau1.jpg",blur1_img)
+#     blur1_img = cv2.GaussianBlur(image.copy(), (13,13), 0)
+#     cv2.imwrite("mau.jpg",blur_img)
+#     hsv_img = cv2.cvtColor(blur1_img, cv2.COLOR_BGR2HSV)
+#     list_hsvvalue = []
+#     list_index = list(range(48))
+#     for i in range(len(sorted_contours1)):
+#         list_index[i] = []
+#         cimg = np.zeros_like(gray_img)
+#         cv2.drawContours(cimg, sorted_contours1, i, color = 255, thickness = -1)
+#         pts = np.where(cimg == 255)
+#         list_hsvvalue.append(hsv_img[pts[0], pts[1]])
+#         for j in range(len(list_hsvvalue[i])):
+#             list_index[i].append(list_hsvvalue[i][j][2])
+#         list_intensities.append(sum(list_index[i]))
+#         #area[i]= cv2.contourArea(sorted_contours1[i])
+#         result_list[i] = list_intensities[i]
+#         tmp_list[i] = list_intensities[i]/10000
+#         result_list[i] = round(tmp_list[i])
+            
         #result_list[i] = round((list_intensities[i])*20/36880)
             
 #lay hieu so voi gia tri khong mau           
 #         if(calibrationclicked==0):
-#             result_list[i] = result_list[i]-coefficient_value[i]
+#             result_list[i] = result_list[i]-coefficient_value[i] + 50
 #             if(result_list[i]<0):
 #                 result_list[i]=0
 
@@ -231,10 +235,11 @@ def process_image(image_name, start_point=(282,79), end_point=(515,392)):
                 
 
 #nhan he so
-        if(calibrationclicked==0):
-            result_list[i] = round(result_list[i]*coefficient_value[i])
-        else:
-            result_list[i] = result_list[i]
+#         if(calibrationclicked==0):
+#             #result_list[i] = round(result_list[i]*coefficient_value[i])
+#             result_list[i] = result_list[i]*coefficient_value[i]
+#         else:
+#             result_list[i] = result_list[i]
             
 #         for i in range(len(sorted_contours1)):
 #             if(i==7 or i==38 or i==40):
@@ -257,11 +262,12 @@ def process_image(image_name, start_point=(282,79), end_point=(515,392)):
             print('%d' % (result_list[i]), end = ' | ')
 
     blurori_img = cv2.GaussianBlur(image.copy(), (25,25), 0)
+    global thr3l_set
     for i in range(len(sorted_contours1)):
-        if(result_list[i]<=20):
+        if(result_list[i]<= 30):
             cv2.drawContours(blurori_img, sorted_contours1, i, (255,255,0), thickness = 2)
         else:
-            if(result_list[i] <= 25):
+            if(result_list[i] <= int(thr3l_set)):
                 cv2.drawContours(blurori_img, sorted_contours1, i, (255,255,0), thickness = 2)
             else:
                 cv2.drawContours(blurori_img, sorted_contours1, i, (0,0,255), thickness = 2)
@@ -408,19 +414,21 @@ def mainscreen():
         global spotcheck_createclicked
         if(spotcheck_createclicked==0):
             newprogram_button = Button(homemc_labelframe, font=("Courier",11,'bold'), bg="lavender", text="NEW PROGRAM", height=4, width=15, borderwidth=0, command=newprogram_click)
-            newprogram_button.place(x=228,y=250)
+            newprogram_button.place(x=228,y=232)
+            power_labelframe = LabelFrame(homemc_labelframe, bg='white',text='POWER', width=405, height=120)
+            power_labelframe.place(x=106,y=340)
             def shutdown_click():
                 os.system("sudo shutdown -h now")
             def restart_click():
                 os.system("sudo shutdown -r now")
             def exit_click():
                 root.destroy()
-            exit_button = Button(homemc_labelframe, fg='white', activebackground="dodger blue", font=('Courier','13','bold'), bg="blue4", text="EXIT", height=3, width=9, borderwidth=0, command=exit_click)
-            exit_button.place(x=120,y=380)
-            shutdown_button = Button(homemc_labelframe, fg='white', activebackground="red", font=('Courier','13','bold'), bg="red3", text="SHUTDOWN", height=3, width=9, borderwidth=0, command=shutdown_click)
-            shutdown_button.place(x=250,y=380)
-            restart_button = Button(homemc_labelframe, fg='white', activebackground="lawn green", font=('Courier','13','bold'), bg="green", text="RESTART", height=3, width=9, borderwidth=0, command=restart_click)
-            restart_button.place(x=380,y=380)
+            exit_button = Button(power_labelframe, fg='white', activebackground="dodger blue", font=('Courier','13','bold'), bg="blue4", text="EXIT", height=3, width=9, borderwidth=0, command=exit_click)
+            exit_button.place(x=12,y=8)
+            shutdown_button = Button(power_labelframe, fg='white', activebackground="red", font=('Courier','13','bold'), bg="red3", text="SHUTDOWN", height=3, width=9, borderwidth=0, command=shutdown_click)
+            shutdown_button.place(x=142,y=8)
+            restart_button = Button(power_labelframe, fg='white', activebackground="lawn green", font=('Courier','13','bold'), bg="green", text="RESTART", height=3, width=9, borderwidth=0, command=restart_click)
+            restart_button.place(x=272,y=8)
         else:
             newprogram_click()
             
@@ -666,62 +674,80 @@ def mainscreen():
             global calibrationclicked
             calibrationclicked = 1
             
-            camera_capture('calib.jpg')
+            send_data = 'Q'
+            ser.write(send_data.encode())
             
-#             image = cv2.imread('calib.jpg')
-#             #blur_img = cv2.GaussianBlur(image.copy(), (35,35), 0)
-#             blur_img = cv2.fastNlMeansDenoisingColored(image.copy(),None,15,15,7,21)
-#             gray_img = cv2.cvtColor(blur_img, cv2.COLOR_BGR2GRAY)            
-#             thresh, binary_img = cv2.threshold(gray_img.copy(), 40, maxval=255, type=cv2.THRESH_BINARY) 
-#             contours, hierarchy = cv2.findContours(binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-#             print("Number of contours: " + str(len(contours)))
-# 
-#             contours.sort(key=lambda data:sorting_xy(data))
-# 
-#             contour_img = np.zeros_like(gray_img)
-#             bourect0 = cv2.boundingRect(contours[0])
-#             bourect47 = cv2.boundingRect(contours[len(contours)-1])
-#             global start_point
-#             start_point = (bourect0[0]-6, bourect0[1]-6)
-#             global end_point 
-#             end_point = (bourect47[0]+bourect47[2]+6, bourect47[1]+bourect47[3]+6)
-#             
-            #calib_result, __ = process_image('calib.jpg')
-            
-            inten_result, __ = process_image('calib.jpg')
-            calib_result = list(range(48))  
-            for i in range(0,48):
-                calib_result[i] = round(inten_result[20]/inten_result[i],3)
-           
-            for i in range(0,48):
-                if((i!=0) and (i+1)%6==0):
-                    print('%.3f' %(calib_result[i]))
-                else:
-                    print('%.3f' %(calib_result[i]), end= '|')
-                    
-            for i in range(0,48):
-                if(i<6):
-                    pos = str(chr(65+i+1)) + "2"
-                if(i>=6 and i<12):
-                    pos = str(chr(65+i-5)) + "3"
-                if(i>=12 and i<18):
-                    pos = str(chr(65+i-11)) + "4"
-                if(i>=18 and i<24):
-                    pos = str(chr(65+i-17)) + "5"
-                if(i>=24 and i<30):
-                    pos = str(chr(65+i-23)) + "6"
-                if(i>=30 and i<36):
-                    pos = str(chr(65+i-29)) + "7"
-                if(i>=36 and i<42):
-                    pos = str(chr(65+i-35)) + "8"
-                if(i>=42):
-                    pos = str(chr(65+i-41)) + "9"
+            if(ser.in_waiting>0):
+                receive_data = ser.readline().decode('utf-8').rstrip()
+                print("Data received:", receive_data)
+                if(receive_data=='Q'):
+                    global wait
+                    wait = 1
+                          
+            while(wait!=1):
+                if(ser.in_waiting>0):
+                    receive_data = ser.readline().decode('utf-8').rstrip()
+                    print("Data received:", receive_data)
+                    if(receive_data=='Q'):
+                        wait = 1
+                        break
                 
-                sheet[pos] = calib_result[i]
-            workbook.save('Calibration_Value.xlsx')
-            calibrationclicked  = 0
-            msg = messagebox.showinfo('Calibration Done', 'Close the app and reboot!')
-            root.destroy()
+            while(wait==1):
+                camera_capture('calib.jpg')
+                image = cv2.imread('calib.jpg')
+                #blur_img = cv2.GaussianBlur(image.copy(), (35,35), 0)
+                blur_img = cv2.fastNlMeansDenoisingColored(image.copy(),None,15,15,7,21)
+                gray_img = cv2.cvtColor(blur_img, cv2.COLOR_BGR2GRAY)            
+                thresh, binary_img = cv2.threshold(gray_img.copy(), 40, maxval=255, type=cv2.THRESH_BINARY) 
+                contours, hierarchy = cv2.findContours(binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                print("Number of contours: " + str(len(contours)))
+                contours.sort(key=lambda data:sorting_xy(data))    
+                contour_img = np.zeros_like(gray_img)
+                bourect0 = cv2.boundingRect(contours[0])
+                bourect47 = cv2.boundingRect(contours[len(contours)-1])
+                global start_point
+                start_point = (bourect0[0]-6, bourect0[1]-6)
+                global end_point 
+                end_point = (bourect47[0]+bourect47[2]+6, bourect47[1]+bourect47[3]+6)
+            
+                calib_result, __ = process_image('calib.jpg',start_point, end_point)
+            
+#                 inten_result, __ = process_image('calib.jpg')
+#                 calib_result = list(range(48))  
+#                 for i in range(0,48):
+#                     #calib_result[i] = round(inten_result[20]/inten_result[i],3)
+#                     calib_result[i] = inten_result[20]-inten_result[i]
+                    
+                for i in range(0,48):
+                    if((i!=0) and (i+1)%6==0):
+                        print('%.3f' %(calib_result[i]))
+                    else:
+                        print('%.3f' %(calib_result[i]), end= '|')
+                        
+                for i in range(0,48):
+                    if(i<6):
+                        pos = str(chr(65+i+1)) + "2"
+                    if(i>=6 and i<12):
+                        pos = str(chr(65+i-5)) + "3"
+                    if(i>=12 and i<18):
+                        pos = str(chr(65+i-11)) + "4"
+                    if(i>=18 and i<24):
+                        pos = str(chr(65+i-17)) + "5"
+                    if(i>=24 and i<30):
+                        pos = str(chr(65+i-23)) + "6"
+                    if(i>=30 and i<36):
+                        pos = str(chr(65+i-29)) + "7"
+                    if(i>=36 and i<42):
+                        pos = str(chr(65+i-35)) + "8"
+                    if(i>=42):
+                        pos = str(chr(65+i-41)) + "9"
+                    
+                    sheet[pos] = calib_result[i]
+                workbook.save('Calibration_Value.xlsx')
+                calibrationclicked  = 0
+                msg = messagebox.showinfo('Calibration Done', 'Close the app and reboot!')
+                wait=0
+                root.destroy()
         calib_button = Button(calibrationmc_labelframe, font=("Courier",11,'bold'), bg="lavender", text="START CALIBRATION", height=4, width=15, borderwidth=0, command=calib_click)
         calib_button.place(x=230,y=320)
     
@@ -1267,8 +1293,8 @@ def scanposition():
 
         global pos_result
         #pos_result, pos_image = process_image("test.jpg", start_point, end_point)
-        #pos_result, pos_image = process_image(path4 + "/Sample_original.jpg", start_point, end_point)
-        pos_result, pos_image = process_image(path4 + "/Sample_original.jpg")
+        pos_result, pos_image = process_image(path4 + "/Sample_original.jpg", start_point, end_point)
+        #pos_result, pos_image = process_image(path4 + "/Sample_original.jpg")
         scanposition_progressbar['value'] = 60
         root.update_idletasks()
         sleep(1)
@@ -1304,7 +1330,7 @@ def scanposition():
                     t='G'+ str(i-35)
                 if(i>=42):
                     t='H'+ str(i-41)
-                if(pos_result[i]< 15):
+                if(pos_result[i]<=30):
                     label[i] = Label(scanresult_labelframe, bg='gainsboro', text=t, width=5, height=2)
                     label[i].grid(row=row_value,column=j,padx=3,pady=3)
                 else:
@@ -1441,7 +1467,7 @@ def analysis():
                 t_progressbar.start()
                 tprocess_label = Label(t1_labelframe, bg=atk.DEFAULT_COLOR, fg='white smoke', text='Processing!', font=("Courier",9,'bold'))
                 tprocess_label.place(x=59,y=112)
-
+                
                 global path1
                 camera_capture(path1 + "/T1.jpg")
                   
@@ -1518,7 +1544,7 @@ def analysis():
                 t_progressbar.start()
                 tprocess_label = Label(t2_labelframe, bg=atk.DEFAULT_COLOR, fg='white smoke', text='Processing!', font=("Courier",9,'bold'))
                 tprocess_label.place(x=59,y=112)
-
+  
                 camera_capture(path1 + "/T2.jpg")
                 
                 send_data = 'C'
@@ -1591,14 +1617,14 @@ def analysis():
                 t_progressbar.start()
                 tprocess_label = Label(t3_labelframe, bg=atk.DEFAULT_COLOR, fg='white smoke', text='Processing!', font=("Courier",9,'bold'))
                 tprocess_label.place(x=59,y=112)
-
+        
                 camera_capture(path1 + "/T3.jpg")
                 
                 send_data = 'C'
                 ser.write(send_data.encode())
                 print('Capture done!')
                 t3_result, t3_image = process_image(path1 + "/T3.jpg", start_point, end_point)
-                #t3result, t3_image = process_image(path1 + "/T3.jpg")
+                #t3_result, t3_image = process_image(path1 + "/T3.jpg")
                 
                 output = path2 + "/T3.jpg"
                 cv2.imwrite(output, t3_image)
@@ -1751,23 +1777,23 @@ def analysis():
                         global pos_result
                         for i in range(range_a, range_b):
                             j+=1
-                            if(pos_result[i]<=12):
+                            if(pos_result[i]<=30):
                                 label[i] = Label(result_labelframe, bg='white smoke', text='N/A', width=4, height=2)
                                 label[i].grid(row=row_value,column=j,padx=2,pady=2)
                             else:
-                                if(t1_result[i]<=thr1_set):
+                                if(t1_result[i]<=int(thr1_set)):
                                     label[i] = Label(result_labelframe, bg='yellow', text='E', width=4, height=2)
                                     label[i].grid(row=row_value,column=j,padx=2,pady=2)
-                                if(t1_result[i]>thr1_set and t2_result[i]<=thr2_set):
+                                if(t1_result[i]>int(thr1_set) and t2_result[i]<=int(thr2_set)):
                                     label[i] = Label(result_labelframe, bg='yellow', text='E', width=4, height=2)
                                     label[i].grid(row=row_value,column=j,padx=2,pady=2) 
-                                if(t1_result[i]>thr1_set and t2_result[i]>thr2_set and t3_result[i]<=thr3l_set):
+                                if(t1_result[i]>int(thr1_set) and t2_result[i]>int(thr2_set) and t3_result[i]<=int(thr3l_set)):
                                     label[i] = Label(result_labelframe, bg='lawn green', text='N', width=4, height=2)
                                     label[i].grid(row=row_value,column=j,padx=2,pady=2)
-                                if(t1_result[i]>thr1_set and t2_result[i]>thr2_set and t3_result[i]>thr3l_set and t3_result[i]<=thr3h_set):
+                                if(t1_result[i]>int(thr1_set) and t2_result[i]>int(thr2_set) and t3_result[i]>int(thr3l_set) and t3_result[i]<=int(thr3h_set)):
                                     label[i] = Label(result_labelframe, bg='cyan', text='R', width=4, height=2)
                                     label[i].grid(row=row_value,column=j,padx=2,pady=2)
-                                if(t1_result[i]>thr1_set and t2_result[i]>thr2_set and t3_result[i]>thr3h_set):
+                                if(t1_result[i]>int(thr1_set) and t2_result[i]>int(thr2_set) and t3_result[i]>int(thr3h_set)):
                                     label[i] = Label(result_labelframe, bg='red', text='P', width=4, height=2)
                                     label[i].grid(row=row_value,column=j,padx=2,pady=2)
                                                     
@@ -1785,38 +1811,39 @@ def analysis():
                         if(detail_button['bg']=='lawn green'):
                             detail_button['bg']='grey94'
                             for i in range (0,48):
-                                if(pos_result[i]<=12):
+                                if(pos_result[i]<=30):
                                     label[i]['text'] = 'N/A' 
                                 
                                 else:
-                                    if(t1_result[i]<=thr1_set):
+                                    if(t1_result[i]<=int(thr1_set)):
                                         label[i]['text'] = 'E' 
-                                    if(t1_result[i]>thr1_set and t2_result[i]<=thr2_set):
+                                    if(t1_result[i]>int(thr1_set) and t2_result[i]<=int(thr2_set)):
                                         label[i]['text'] = 'E'  
-                                    if(t1_result[i]>thr1_set and t2_result[i]>thr2_set and t3_result[i]<=thr3l):
+                                    if(t1_result[i]>int(thr1_set) and t2_result[i]>int(thr2_set) and t3_result[i]<=int(thr3l_set)):
                                         label[i]['text'] = 'N' 
-                                    if(t1_result[i]>thr1_set and t2_result[i]>thr2_set and t3_result[i]>thr3l_set and t3_result[i]<=thr3h_set):
+                                    if(t1_result[i]>int(thr1_set) and t2_result[i]>int(thr2_set) and t3_result[i]>int(thr3l_set) and t3_result[i]<=int(thr3h_set)):
                                         label[i]['text'] = 'R' 
-                                    if(t1_result[i]>thr1_set and t2_result[i]>thr2_set and t3_result[i]>thr3h_set):
+                                    if(t1_result[i]>int(thr1_set) and t2_result[i]>int(thr2_set) and t3_result[i]>int(thr3h_set)):
                                         label[i]['text'] = 'P' 
                         else:
                             detail_button['bg']='lawn green'
                             for i in range (0,48):
-                                if(pos_result[i]<=12):
+                                if(pos_result[i]<=30):
                                     label[i]['text'] = str('%d'%t3_result[i]) 
                                     
                                 else:
-                                    if(t1_result[i]<=thr1_set):
+                                    if(t1_result[i]<=int(thr1_set)):
                                         label[i]['text'] = str('%d'%t3_result[i])
-                                    if(t1_result[i]>thr1_set and t2_result[i]<=thr2_set):
+                                    if(t1_result[i]>int(thr1_set) and t2_result[i]<=int(thr2_set)):
                                         label[i]['text'] = str('%d'%t3_result[i]) 
-                                    if(t1_result[i]>thr1_set and t2_result[i]>thr2_set and t3_result[i]<=thr3l):
+                                    if(t1_result[i]>int(thr1_set) and t2_result[i]>int(thr2_set) and t3_result[i]<=int(thr3l_set)):
                                         label[i]['text'] = str('%d'%t3_result[i])
-                                    if(t1_result[i]>thr1_set and t2_result[i]>thr2_set and t3_result[i]>thr3l_set and t3_result[i]<=thr3h_set):
+                                    if(t1_result[i]>int(thr1_set) and t2_result[i]>int(thr2_set) and t3_result[i]>int(thr3l_set) and t3_result[i]<=int(thr3h_set)):
                                         label[i]['text'] = str('%d'%t3_result[i]) 
-                                    if(t1_result[i]>thr1_set and t2_result[i]>thr2_set and t3_result[i]>thr3h_set):
+                                    if(t1_result[i]>int(thr1_set) and t2_result[i]>int(thr2_set) and t3_result[i]>int(thr3h_set)):
                                         label[i]['text'] = str('%d'%t3_result[i])
-                                        
+                            root.update_idletasks()
+                            subprocess.call(["scrot",path3+"/result_value.jpg"])
                     detail_button = Button(analysis_labelframe, activebackground="white", bg="grey94", text="DETAIL", height=3, width=10, borderwidth=0, command=detail_click)
                     detail_button.place(x=360,y=396)
                     root.update_idletasks()
