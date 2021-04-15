@@ -184,9 +184,10 @@ def process_image(image_name, start_point=(282,79), end_point=(514,391)):
         cv2.drawContours(cimg, sorted_contours1, i, color = 255, thickness = -1)
         pts = np.where(cimg == 255)
         list_intensities.append(grayprocess_img[pts[0], pts[1]])
-        sum_intensities.append(sum(list_intensities[i]))
+        list_intensities[i].sort()
+        sum_intensities.append(sum(list_intensities[i][len(list_intensities[i])-300:]))
         area[i]= cv2.contourArea(sorted_contours1[i])
-        #result_list[i] = round((sum_intensities[i])*50/69791)
+        #result_list[i] = sum_intensities[i]
         tmp_list[i] = sum_intensities[i]/1000
         result_list[i] = round(tmp_list[i])
 
