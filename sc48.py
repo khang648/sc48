@@ -73,7 +73,7 @@ start_point = (0,0)
 end_point = (0,0)
 calibrationclicked = 0
 coefficient_value = list(range(48))
-thr3l_set = 30
+thr3l_set = 15
 
 workbook = openpyxl.load_workbook('/home/pi/Desktop/sc48/Calibration_Value.xlsx')
 sheet = workbook.active
@@ -122,7 +122,7 @@ def sorting_xy(contour):
     return math.sqrt(math.pow(rect_xy[0],2) + math.pow(rect_xy[1],2))
 
 ############################################################# Xử lý ảnh ###################################################################
-def process_image(image_name, start_point=(282,79), end_point=(514,391)):
+def process_image(image_name, start_point=(283,79), end_point=(514,391)):
     global coefficient_value
     global calibrationclicked
     
@@ -177,16 +177,18 @@ def process_image(image_name, start_point=(282,79), end_point=(514,391)):
     area = list(range(48))
     
     tmp_list = list(range(48))
-    blur1_img = cv2.GaussianBlur(image.copy(), (11,11), 0)
+    blur1_img = cv2.GaussianBlur(image.copy(), (25,25), 0)
     grayprocess_img = cv2.cvtColor(blur1_img, cv2.COLOR_BGR2GRAY)
     for i in range(len(sorted_contours1)):
         cimg = np.zeros_like(gray_img)
         cv2.drawContours(cimg, sorted_contours1, i, color = 255, thickness = -1)
         pts = np.where(cimg == 255)
         list_intensities.append(grayprocess_img[pts[0], pts[1]])
-        sum_intensities.append(sum(list_intensities[i]))
+        list_intensities[i].sort()
+        print("value:",list_intensities[i][len(list_intensities[i])-250])
+        sum_intensities.append(sum(list_intensities[i][len(list_intensities[i])-250:]))
         area[i]= cv2.contourArea(sorted_contours1[i])
-        #result_list[i] = round((sum_intensities[i])*50/69791)
+        #result_list[i] = sum_intensities[i]
         tmp_list[i] = sum_intensities[i]/1000
         result_list[i] = round(tmp_list[i])
 
@@ -216,7 +218,7 @@ def process_image(image_name, start_point=(282,79), end_point=(514,391)):
             
 #lay hieu so voi gia tri khong mau           
 #         if(calibrationclicked==0):
-#             result_list[i] = result_list[i]-coefficient_value[i] + 50
+#             result_list[i] = result_list[i]-coefficient_value[i]+40
 #             if(result_list[i]<0):
 #                 result_list[i]=0
 
@@ -236,20 +238,24 @@ def process_image(image_name, start_point=(282,79), end_point=(514,391)):
 
 #nhan he so
 #         if(calibrationclicked==0):
-#             #result_list[i] = round(result_list[i]*coefficient_value[i])
-#             result_list[i] = result_list[i]*coefficient_value[i]
+#             result_list[i] = round(result_list[i]*coefficient_value[i])
 #         else:
 #             result_list[i] = result_list[i]
             
-#         for i in range(len(sorted_contours1)):
-#             if(i==7 or i==38 or i==40):
-#                 result_list[i] = round(result_list[i]*1.111)
-#             if(i==8 or i==16 or i==30 or i==34):
-#                 result_list[i] = round(result_list[i]*1.081)
-#             if(i==9 or i==37):
-#                 result_list[i] = round(result_list[i]*1.143)
-#             if(i==10 or i==39):
-#                 result_list[i] = round(result_list[i]*1.176)
+#     for i in range(len(sorted_contours1)):
+#         if(i==6):
+#             result_list[i] = round(result_list[i]*0.952)
+#         if(i==7 or i==13 or i==19 or i==24 or i==30):
+#             result_list[i] = round(result_list[i]*0.984)
+#         if(i==8 or i==9 or i==22 or i==27 or i==32 or i==34):
+#             result_list[i] = round(result_list[i]*1.017)
+#         if(i==12 or i==18):
+#             result_list[i] = round(result_list[i]*0.968)
+#         if(i==14 or i==15 or i==28):
+#             result_list[i] = round(result_list[i]*1.035)
+#         if(i==16):
+#             result_list[i] = round(result_list[i]*1.053)
+            
     
 #     for i in range(len(sorted_contours1)):
 #         if(result_list[i]>99):
@@ -264,7 +270,7 @@ def process_image(image_name, start_point=(282,79), end_point=(514,391)):
     blurori_img = cv2.GaussianBlur(image.copy(), (25,25), 0)
     global thr3l_set
     for i in range(len(sorted_contours1)):
-        if(result_list[i]<= 30):
+        if(result_list[i]<= 15):
             cv2.drawContours(blurori_img, sorted_contours1, i, (255,255,0), thickness = 2)
         else:
             if(result_list[i] <= int(thr3l_set)):
@@ -694,29 +700,29 @@ def mainscreen():
                 
             while(wait==1):
                 camera_capture('calib.jpg')
-                image = cv2.imread('calib.jpg')
-                #blur_img = cv2.GaussianBlur(image.copy(), (35,35), 0)
-                blur_img = cv2.fastNlMeansDenoisingColored(image.copy(),None,15,15,7,21)
-                gray_img = cv2.cvtColor(blur_img, cv2.COLOR_BGR2GRAY)            
-                thresh, binary_img = cv2.threshold(gray_img.copy(), 40, maxval=255, type=cv2.THRESH_BINARY) 
-                contours, hierarchy = cv2.findContours(binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                print("Number of contours: " + str(len(contours)))
-                contours.sort(key=lambda data:sorting_xy(data))    
-                contour_img = np.zeros_like(gray_img)
-                bourect0 = cv2.boundingRect(contours[0])
-                bourect47 = cv2.boundingRect(contours[len(contours)-1])
-                global start_point
-                start_point = (bourect0[0]-6, bourect0[1]-6)
-                global end_point 
-                end_point = (bourect47[0]+bourect47[2]+6, bourect47[1]+bourect47[3]+6)
+#                 image = cv2.imread('calib.jpg')
+#                 #blur_img = cv2.GaussianBlur(image.copy(), (35,35), 0)
+#                 blur_img = cv2.fastNlMeansDenoisingColored(image.copy(),None,15,15,7,21)
+#                 gray_img = cv2.cvtColor(blur_img, cv2.COLOR_BGR2GRAY)            
+#                 thresh, binary_img = cv2.threshold(gray_img.copy(), 40, maxval=255, type=cv2.THRESH_BINARY) 
+#                 contours, hierarchy = cv2.findContours(binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+#                 print("Number of contours: " + str(len(contours)))
+#                 contours.sort(key=lambda data:sorting_xy(data))    
+#                 contour_img = np.zeros_like(gray_img)
+#                 bourect0 = cv2.boundingRect(contours[0])
+#                 bourect47 = cv2.boundingRect(contours[len(contours)-1])
+#                 global start_point
+#                 start_point = (bourect0[0]-6, bourect0[1]-6)
+#                 global end_point 
+#                 end_point = (bourect47[0]+bourect47[2]+6, bourect47[1]+bourect47[3]+6)
             
-                calib_result, __ = process_image('calib.jpg',start_point, end_point)
+                calib_result, __ = process_image('calib.jpg')
             
 #                 inten_result, __ = process_image('calib.jpg')
 #                 calib_result = list(range(48))  
 #                 for i in range(0,48):
-#                     #calib_result[i] = round(inten_result[20]/inten_result[i],3)
-#                     calib_result[i] = inten_result[20]-inten_result[i]
+#                     calib_result[i] = round(inten_result[20]/inten_result[i],3)
+#                     #calib_result[i] = inten_result[20]-inten_result[i]
                     
                 for i in range(0,48):
                     if((i!=0) and (i+1)%6==0):
@@ -1293,8 +1299,8 @@ def scanposition():
 
         global pos_result
         #pos_result, pos_image = process_image("test.jpg", start_point, end_point)
-        pos_result, pos_image = process_image(path4 + "/Sample_original.jpg", start_point, end_point)
-        #pos_result, pos_image = process_image(path4 + "/Sample_original.jpg")
+        #pos_result, pos_image = process_image(path4 + "/Sample_original.jpg", start_point, end_point)
+        pos_result, pos_image = process_image(path4 + "/Sample_original.jpg")
         scanposition_progressbar['value'] = 60
         root.update_idletasks()
         sleep(1)
@@ -1330,7 +1336,7 @@ def scanposition():
                     t='G'+ str(i-35)
                 if(i>=42):
                     t='H'+ str(i-41)
-                if(pos_result[i]<=30):
+                if(pos_result[i]<=15):
                     label[i] = Label(scanresult_labelframe, bg='gainsboro', text=t, width=5, height=2)
                     label[i].grid(row=row_value,column=j,padx=3,pady=3)
                 else:
@@ -1477,8 +1483,8 @@ def analysis():
                 
                 global start_point
                 global end_point 
-                t1_result, t1_image= process_image(path1 + "/T1.jpg", start_point, end_point)
-                #t1_result, t1_image= process_image(path1 + "/T1.jpg")
+                #t1_result, t1_image= process_image(path1 + "/T1.jpg", start_point, end_point)
+                t1_result, t1_image= process_image(path1 + "/T1.jpg")
 
                 global path2
                 output = path2 + "/T1.jpg"
@@ -1550,8 +1556,8 @@ def analysis():
                 send_data = 'C'
                 ser.write(send_data.encode())
                 print('Capture done!')
-                t2_result, t2_image = process_image(path1 + "/T2.jpg", start_point, end_point)
-                #t2_result, t2_image= process_image(path1 + "/T2.jpg")
+                #t2_result, t2_image = process_image(path1 + "/T2.jpg", start_point, end_point)
+                t2_result, t2_image= process_image(path1 + "/T2.jpg")
                 
                 output = path2 + "/T2.jpg"
                 cv2.imwrite(output, t2_image)
@@ -1623,8 +1629,8 @@ def analysis():
                 send_data = 'C'
                 ser.write(send_data.encode())
                 print('Capture done!')
-                t3_result, t3_image = process_image(path1 + "/T3.jpg", start_point, end_point)
-                #t3_result, t3_image = process_image(path1 + "/T3.jpg")
+                #t3_result, t3_image = process_image(path1 + "/T3.jpg", start_point, end_point)
+                t3_result, t3_image = process_image(path1 + "/T3.jpg")
                 
                 output = path2 + "/T3.jpg"
                 cv2.imwrite(output, t3_image)
@@ -1873,3 +1879,4 @@ ser = serial.Serial(
 while True:
     mainscreen()
     root.mainloop()
+
