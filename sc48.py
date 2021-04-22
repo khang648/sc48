@@ -122,7 +122,7 @@ def sorting_xy(contour):
     return math.sqrt(math.pow(rect_xy[0],2) + math.pow(rect_xy[1],2))
 
 ############################################################# Xử lý ảnh ###################################################################
-def process_image(image_name, start_point=(283,79), end_point=(514,391)):
+def process_image(image_name, start_point=(277,72), end_point=(511,390)):
     global coefficient_value
     global calibrationclicked
     
@@ -185,13 +185,14 @@ def process_image(image_name, start_point=(283,79), end_point=(514,391)):
         pts = np.where(cimg == 255)
         list_intensities.append(grayprocess_img[pts[0], pts[1]])
         list_intensities[i].sort()
-        print("value:",list_intensities[i][len(list_intensities[i])-250])
-        sum_intensities.append(sum(list_intensities[i][len(list_intensities[i])-250:]))
+        #print("value:",list_intensities[i][len(list_intensities[i])-250])
+        sum_intensities.append(sum(list_intensities[i][len(list_intensities[i])-240:]))
         area[i]= cv2.contourArea(sorted_contours1[i])
         #result_list[i] = sum_intensities[i]
         tmp_list[i] = sum_intensities[i]/1000
-        result_list[i] = round(tmp_list[i])
-
+        #result_list[i] = round(tmp_list[i])
+        result_list[i] = round(tmp_list[i]*1.5)
+        
 #     tmp_list = list(range(48))
 #     #blur1_img = cv2.fastNlMeansDenoisingColored(image.copy(),None,15,15,9,25) 
 #     #cv2.imwrite("mau1.jpg",blur1_img)
@@ -264,8 +265,10 @@ def process_image(image_name, start_point=(283,79), end_point=(514,391)):
     for i in range(len(sorted_contours1)):
         if ((i!=0) and ((i+1)%6==0)):
             print('%d' %(result_list[i]))
+            #print(result_list[i])
         else:
             print('%d' % (result_list[i]), end = ' | ')
+            #print(result_list[i], end = ' | ')
 
     blurori_img = cv2.GaussianBlur(image.copy(), (25,25), 0)
     global thr3l_set
@@ -327,6 +330,8 @@ def mainscreen():
         logo_label.place(x=250,y=25)
         
         def newprogram_click():
+            global power_labelframe
+            power_labelframe.place_forget()
             logo_label.place_forget()
             try:
                 newprogram_button.place_forget()
@@ -1406,6 +1411,10 @@ def analysis():
     temp_label.place(x=65,y=389)
 
     def stop_click():
+        try:
+            camera.close()
+        except Exception:
+            pass
         global ser
         msgbox = messagebox.askquestion('Stop the process','Do you want to stop the analysis ?', icon = 'question')
         if(msgbox=='yes'):
@@ -1415,6 +1424,10 @@ def analysis():
             mainscreen()       
     
     def pause_click():
+        try:
+            camera.close()
+        except Exception:
+            pass
         global ser
         if(pause_button['text']=='Pause'):
             send_data ='P'
@@ -1783,7 +1796,7 @@ def analysis():
                         global pos_result
                         for i in range(range_a, range_b):
                             j+=1
-                            if(pos_result[i]<=30):
+                            if(pos_result[i]<=15):
                                 label[i] = Label(result_labelframe, bg='white smoke', text='N/A', width=4, height=2)
                                 label[i].grid(row=row_value,column=j,padx=2,pady=2)
                             else:
@@ -1817,7 +1830,7 @@ def analysis():
                         if(detail_button['bg']=='lawn green'):
                             detail_button['bg']='grey94'
                             for i in range (0,48):
-                                if(pos_result[i]<=30):
+                                if(pos_result[i]<=15):
                                     label[i]['text'] = 'N/A' 
                                 
                                 else:
@@ -1834,7 +1847,7 @@ def analysis():
                         else:
                             detail_button['bg']='lawn green'
                             for i in range (0,48):
-                                if(pos_result[i]<=30):
+                                if(pos_result[i]<=15):
                                     label[i]['text'] = str('%d'%t3_result[i]) 
                                     
                                 else:
