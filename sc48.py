@@ -122,7 +122,7 @@ def sorting_xy(contour):
     return math.sqrt(math.pow(rect_xy[0],2) + math.pow(rect_xy[1],2))
 
 ############################################################# Xử lý ảnh ###################################################################
-def process_image(image_name, start_point=(277,72), end_point=(511,390)):
+def process_image(image_name, start_point=(281,76), end_point=(514,389)):
     global coefficient_value
     global calibrationclicked
     
@@ -179,24 +179,25 @@ def process_image(image_name, start_point=(277,72), end_point=(511,390)):
     tmp_list = list(range(48))
     blur1_img = cv2.GaussianBlur(image.copy(), (25,25), 0)
     grayprocess_img = cv2.cvtColor(blur1_img, cv2.COLOR_BGR2GRAY)
+    cv2.imwrite("mau.jpg",grayprocess_img)
     for i in range(len(sorted_contours1)):
         cimg = np.zeros_like(gray_img)
         cv2.drawContours(cimg, sorted_contours1, i, color = 255, thickness = -1)
         pts = np.where(cimg == 255)
         list_intensities.append(grayprocess_img[pts[0], pts[1]])
         list_intensities[i].sort()
-        #print("value:",list_intensities[i][len(list_intensities[i])-250])
+        print("value", str(i), " : ", list_intensities[i][len(list_intensities[i])-1])
         sum_intensities.append(sum(list_intensities[i][len(list_intensities[i])-240:]))
         area[i]= cv2.contourArea(sorted_contours1[i])
         #result_list[i] = sum_intensities[i]
         tmp_list[i] = sum_intensities[i]/1000
-        #result_list[i] = round(tmp_list[i])
-        result_list[i] = round(tmp_list[i]*1.5)
+        result_list[i] = round(tmp_list[i])
+        result_list[i] = round(round(tmp_list[i],1)*2)
         
 #     tmp_list = list(range(48))
-#     #blur1_img = cv2.fastNlMeansDenoisingColored(image.copy(),None,15,15,9,25) 
+#     #blur1_img = cv2.fastNlMeansDenoisingColored(image.copy(),None,9,9,7,19) 
 #     #cv2.imwrite("mau1.jpg",blur1_img)
-#     blur1_img = cv2.GaussianBlur(image.copy(), (13,13), 0)
+#     blur1_img = cv2.GaussianBlur(image.copy(), (3,3), 0)
 #     cv2.imwrite("mau.jpg",blur_img)
 #     hsv_img = cv2.cvtColor(blur1_img, cv2.COLOR_BGR2HSV)
 #     list_hsvvalue = []
@@ -209,10 +210,12 @@ def process_image(image_name, start_point=(277,72), end_point=(511,390)):
 #         list_hsvvalue.append(hsv_img[pts[0], pts[1]])
 #         for j in range(len(list_hsvvalue[i])):
 #             list_index[i].append(list_hsvvalue[i][j][2])
-#         list_intensities.append(sum(list_index[i]))
+#         list_index[i].sort()
+#         #print(len(list_index[i]))
+#         list_intensities.append(sum(list_index[i][len(list_index[i])-250:]))
 #         #area[i]= cv2.contourArea(sorted_contours1[i])
 #         result_list[i] = list_intensities[i]
-#         tmp_list[i] = list_intensities[i]/10000
+#         tmp_list[i] = list_intensities[i]/1000
 #         result_list[i] = round(tmp_list[i])
             
         #result_list[i] = round((list_intensities[i])*20/36880)
@@ -258,9 +261,9 @@ def process_image(image_name, start_point=(277,72), end_point=(511,390)):
 #             result_list[i] = round(result_list[i]*1.053)
             
     
-#     for i in range(len(sorted_contours1)):
-#         if(result_list[i]>99):
-#             result_list[i]=99
+    for i in range(len(sorted_contours1)):
+        if(result_list[i]>99):
+            result_list[i]=99
 
     for i in range(len(sorted_contours1)):
         if ((i!=0) and ((i+1)%6==0)):
@@ -280,6 +283,7 @@ def process_image(image_name, start_point=(277,72), end_point=(511,390)):
                 cv2.drawContours(blurori_img, sorted_contours1, i, (255,255,0), thickness = 2)
             else:
                 cv2.drawContours(blurori_img, sorted_contours1, i, (0,0,255), thickness = 2)
+            
 #     for i in range(len(contours)):
 #         cv2.drawContours(blurori_img, contours, i, (255,255,255), thickness = 1)
 
@@ -1303,7 +1307,7 @@ def scanposition():
         root.update_idletasks()
 
         global pos_result
-        #pos_result, pos_image = process_image("test.jpg", start_point, end_point)
+        #pos_result, pos_image = process_image("test.jpg",(283,79),(514,391))
         #pos_result, pos_image = process_image(path4 + "/Sample_original.jpg", start_point, end_point)
         pos_result, pos_image = process_image(path4 + "/Sample_original.jpg")
         scanposition_progressbar['value'] = 60
