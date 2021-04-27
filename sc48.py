@@ -122,7 +122,7 @@ def sorting_xy(contour):
     return math.sqrt(math.pow(rect_xy[0],2) + math.pow(rect_xy[1],2))
 
 ############################################################# Xử lý ảnh ###################################################################
-def process_image(image_name, start_point=(281,76), end_point=(514,389)):
+def process_image(image_name, start_point=(280,72), end_point=(513,391)):
     global coefficient_value
     global calibrationclicked
     
@@ -143,9 +143,9 @@ def process_image(image_name, start_point=(281,76), end_point=(514,389)):
     cell_w = round(rect_w/6)
     cell_h = round(rect_h/8)
     for i in range(1,6):
-        contour_img = cv2.line(contour_img, (start_point[0]+i*cell_w,start_point[1]), (start_point[0]+i*cell_w,end_point[1]),(0,0,0), 2)
+        contour_img = cv2.line(contour_img, (start_point[0]+i*cell_w,start_point[1]), (start_point[0]+i*cell_w,end_point[1]),(0,0,0), 3)
     for i in range(1,8):
-        contour_img = cv2.line(contour_img, (start_point[0],start_point[1]+i*cell_h), (end_point[0],start_point[1]+i*cell_h),(0,0,0), 2)
+        contour_img = cv2.line(contour_img, (start_point[0],start_point[1]+i*cell_h), (end_point[0],start_point[1]+i*cell_h),(0,0,0), 3)
 
     #gray1_img = cv2.cvtColor(contour_img, cv2.COLOR_BGR2GRAY)
     thresh1 , binary1_img = cv2.threshold(contour_img, 250, maxval=255, type=cv2.THRESH_BINARY)
@@ -179,21 +179,22 @@ def process_image(image_name, start_point=(281,76), end_point=(514,389)):
     tmp_list = list(range(48))
     blur1_img = cv2.GaussianBlur(image.copy(), (25,25), 0)
     grayprocess_img = cv2.cvtColor(blur1_img, cv2.COLOR_BGR2GRAY)
-    cv2.imwrite("mau.jpg",grayprocess_img)
+    #cv2.imwrite("mau.jpg",grayprocess_img)
     for i in range(len(sorted_contours1)):
         cimg = np.zeros_like(gray_img)
         cv2.drawContours(cimg, sorted_contours1, i, color = 255, thickness = -1)
         pts = np.where(cimg == 255)
         list_intensities.append(grayprocess_img[pts[0], pts[1]])
         list_intensities[i].sort()
-        print("value", str(i), " : ", list_intensities[i][len(list_intensities[i])-1])
-        sum_intensities.append(sum(list_intensities[i][len(list_intensities[i])-240:]))
+        #print("list_intensities",str(i),":",list_intensities[i])       
+        #print("value", str(i), " : ", list_intensities[i][len(list_intensities[i])-1])
+        sum_intensities.append(sum(list_intensities[i][len(list_intensities[i])-400:]))
         area[i]= cv2.contourArea(sorted_contours1[i])
         #result_list[i] = sum_intensities[i]
         tmp_list[i] = sum_intensities[i]/1000
         result_list[i] = round(tmp_list[i])
-        result_list[i] = round(round(tmp_list[i],1)*2)
-        
+        #result_list[i] = round(round(tmp_list[i],1)*2)
+    
 #     tmp_list = list(range(48))
 #     #blur1_img = cv2.fastNlMeansDenoisingColored(image.copy(),None,9,9,7,19) 
 #     #cv2.imwrite("mau1.jpg",blur1_img)
@@ -725,13 +726,13 @@ def mainscreen():
 #                 global end_point 
 #                 end_point = (bourect47[0]+bourect47[2]+6, bourect47[1]+bourect47[3]+6)
             
-                calib_result, __ = process_image('calib.jpg')
+                #calib_result, __ = process_image('calib.jpg')
             
-#                 inten_result, __ = process_image('calib.jpg')
-#                 calib_result = list(range(48))  
-#                 for i in range(0,48):
-#                     calib_result[i] = round(inten_result[20]/inten_result[i],3)
-#                     #calib_result[i] = inten_result[20]-inten_result[i]
+                inten_result, __ = process_image('calib.jpg')
+                calib_result = list(range(48))  
+                for i in range(0,48):
+                    calib_result[i] = round(inten_result[20]/inten_result[i],3)
+                    #calib_result[i] = inten_result[20]-inten_result[i]
                     
                 for i in range(0,48):
                     if((i!=0) and (i+1)%6==0):
