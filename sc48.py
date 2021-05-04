@@ -122,7 +122,7 @@ def sorting_xy(contour):
     return math.sqrt(math.pow(rect_xy[0],2) + math.pow(rect_xy[1],2))
 
 ############################################################# Xử lý ảnh ###################################################################
-def process_image(image_name, start_point=(283,79), end_point=(514,391)):
+def process_image(image_name, start_point=(280,72), end_point=(513,391)):
     global coefficient_value
     global calibrationclicked
     
@@ -143,9 +143,9 @@ def process_image(image_name, start_point=(283,79), end_point=(514,391)):
     cell_w = round(rect_w/6)
     cell_h = round(rect_h/8)
     for i in range(1,6):
-        contour_img = cv2.line(contour_img, (start_point[0]+i*cell_w,start_point[1]), (start_point[0]+i*cell_w,end_point[1]),(0,0,0), 2)
+        contour_img = cv2.line(contour_img, (start_point[0]+i*cell_w,start_point[1]), (start_point[0]+i*cell_w,end_point[1]),(0,0,0), 3)
     for i in range(1,8):
-        contour_img = cv2.line(contour_img, (start_point[0],start_point[1]+i*cell_h), (end_point[0],start_point[1]+i*cell_h),(0,0,0), 2)
+        contour_img = cv2.line(contour_img, (start_point[0],start_point[1]+i*cell_h), (end_point[0],start_point[1]+i*cell_h),(0,0,0), 3)
 
     #gray1_img = cv2.cvtColor(contour_img, cv2.COLOR_BGR2GRAY)
     thresh1 , binary1_img = cv2.threshold(contour_img, 250, maxval=255, type=cv2.THRESH_BINARY)
@@ -179,23 +179,28 @@ def process_image(image_name, start_point=(283,79), end_point=(514,391)):
     tmp_list = list(range(48))
     blur1_img = cv2.GaussianBlur(image.copy(), (25,25), 0)
     grayprocess_img = cv2.cvtColor(blur1_img, cv2.COLOR_BGR2GRAY)
+    #cv2.imwrite("mau.jpg",grayprocess_img)
     for i in range(len(sorted_contours1)):
         cimg = np.zeros_like(gray_img)
         cv2.drawContours(cimg, sorted_contours1, i, color = 255, thickness = -1)
         pts = np.where(cimg == 255)
         list_intensities.append(grayprocess_img[pts[0], pts[1]])
         list_intensities[i].sort()
-        print("value:",list_intensities[i][len(list_intensities[i])-250])
-        sum_intensities.append(sum(list_intensities[i][len(list_intensities[i])-250:]))
+        #print("list_intensities",str(i),":",list_intensities[i])       
+        #print("value", str(i), " : ", list_intensities[i][len(list_intensities[i])-1])
+        sum_intensities.append(sum(list_intensities[i][len(list_intensities[i])-280:]))
+        #sum_intensities.append(sum(list_intensities[i][len(list_intensities[i])-240:]))
         area[i]= cv2.contourArea(sorted_contours1[i])
         #result_list[i] = sum_intensities[i]
         tmp_list[i] = sum_intensities[i]/1000
-        result_list[i] = round(tmp_list[i])
-
+        #result_list[i] = round(tmp_list[i])
+        #result_list[i] = round(round(tmp_list[i],1)*1.5)
+        result_list[i] = round(tmp_list[i],1)
+    
 #     tmp_list = list(range(48))
-#     #blur1_img = cv2.fastNlMeansDenoisingColored(image.copy(),None,15,15,9,25) 
+#     #blur1_img = cv2.fastNlMeansDenoisingColored(image.copy(),None,9,9,7,19) 
 #     #cv2.imwrite("mau1.jpg",blur1_img)
-#     blur1_img = cv2.GaussianBlur(image.copy(), (13,13), 0)
+#     blur1_img = cv2.GaussianBlur(image.copy(), (3,3), 0)
 #     cv2.imwrite("mau.jpg",blur_img)
 #     hsv_img = cv2.cvtColor(blur1_img, cv2.COLOR_BGR2HSV)
 #     list_hsvvalue = []
@@ -208,10 +213,12 @@ def process_image(image_name, start_point=(283,79), end_point=(514,391)):
 #         list_hsvvalue.append(hsv_img[pts[0], pts[1]])
 #         for j in range(len(list_hsvvalue[i])):
 #             list_index[i].append(list_hsvvalue[i][j][2])
-#         list_intensities.append(sum(list_index[i]))
+#         list_index[i].sort()
+#         #print(len(list_index[i]))
+#         list_intensities.append(sum(list_index[i][len(list_index[i])-250:]))
 #         #area[i]= cv2.contourArea(sorted_contours1[i])
 #         result_list[i] = list_intensities[i]
-#         tmp_list[i] = list_intensities[i]/10000
+#         tmp_list[i] = list_intensities[i]/1000
 #         result_list[i] = round(tmp_list[i])
             
         #result_list[i] = round((list_intensities[i])*20/36880)
@@ -257,15 +264,17 @@ def process_image(image_name, start_point=(283,79), end_point=(514,391)):
 #             result_list[i] = round(result_list[i]*1.053)
             
     
-#     for i in range(len(sorted_contours1)):
-#         if(result_list[i]>99):
-#             result_list[i]=99
+    for i in range(len(sorted_contours1)):
+        if(result_list[i]>99):
+            result_list[i]=99
 
     for i in range(len(sorted_contours1)):
         if ((i!=0) and ((i+1)%6==0)):
-            print('%d' %(result_list[i]))
+            #print('%d' %(result_list[i]))
+            print('%.1f'%(result_list[i]))
         else:
-            print('%d' % (result_list[i]), end = ' | ')
+            #print('%d' % (result_list[i]), end = ' | ')
+            print('%.1f'%(result_list[i]), end = ' | ')
 
     blurori_img = cv2.GaussianBlur(image.copy(), (25,25), 0)
     global thr3l_set
@@ -277,6 +286,7 @@ def process_image(image_name, start_point=(283,79), end_point=(514,391)):
                 cv2.drawContours(blurori_img, sorted_contours1, i, (255,255,0), thickness = 2)
             else:
                 cv2.drawContours(blurori_img, sorted_contours1, i, (0,0,255), thickness = 2)
+            
 #     for i in range(len(contours)):
 #         cv2.drawContours(blurori_img, contours, i, (255,255,255), thickness = 1)
 
@@ -327,6 +337,8 @@ def mainscreen():
         logo_label.place(x=250,y=25)
         
         def newprogram_click():
+            global power_labelframe
+            power_labelframe.place_forget()
             logo_label.place_forget()
             try:
                 newprogram_button.place_forget()
@@ -716,13 +728,13 @@ def mainscreen():
 #                 global end_point 
 #                 end_point = (bourect47[0]+bourect47[2]+6, bourect47[1]+bourect47[3]+6)
             
-                calib_result, __ = process_image('calib.jpg')
+                #calib_result, __ = process_image('calib.jpg')
             
-#                 inten_result, __ = process_image('calib.jpg')
-#                 calib_result = list(range(48))  
-#                 for i in range(0,48):
-#                     calib_result[i] = round(inten_result[20]/inten_result[i],3)
-#                     #calib_result[i] = inten_result[20]-inten_result[i]
+                inten_result, __ = process_image('calib.jpg')
+                calib_result = list(range(48))  
+                for i in range(0,48):
+                    calib_result[i] = round(inten_result[20]/inten_result[i],3)
+                    #calib_result[i] = inten_result[20]-inten_result[i]
                     
                 for i in range(0,48):
                     if((i!=0) and (i+1)%6==0):
@@ -1298,7 +1310,7 @@ def scanposition():
         root.update_idletasks()
 
         global pos_result
-        #pos_result, pos_image = process_image("test.jpg", start_point, end_point)
+        #pos_result, pos_image = process_image("test.jpg",(283,79),(514,391))
         #pos_result, pos_image = process_image(path4 + "/Sample_original.jpg", start_point, end_point)
         pos_result, pos_image = process_image(path4 + "/Sample_original.jpg")
         scanposition_progressbar['value'] = 60
@@ -1406,6 +1418,10 @@ def analysis():
     temp_label.place(x=65,y=389)
 
     def stop_click():
+        try:
+            camera.close()
+        except Exception:
+            pass
         global ser
         msgbox = messagebox.askquestion('Stop the process','Do you want to stop the analysis ?', icon = 'question')
         if(msgbox=='yes'):
@@ -1415,6 +1431,10 @@ def analysis():
             mainscreen()       
     
     def pause_click():
+        try:
+            camera.close()
+        except Exception:
+            pass
         global ser
         if(pause_button['text']=='Pause'):
             send_data ='P'
@@ -1783,7 +1803,7 @@ def analysis():
                         global pos_result
                         for i in range(range_a, range_b):
                             j+=1
-                            if(pos_result[i]<=30):
+                            if(pos_result[i]<=15):
                                 label[i] = Label(result_labelframe, bg='white smoke', text='N/A', width=4, height=2)
                                 label[i].grid(row=row_value,column=j,padx=2,pady=2)
                             else:
@@ -1817,7 +1837,7 @@ def analysis():
                         if(detail_button['bg']=='lawn green'):
                             detail_button['bg']='grey94'
                             for i in range (0,48):
-                                if(pos_result[i]<=30):
+                                if(pos_result[i]<=15):
                                     label[i]['text'] = 'N/A' 
                                 
                                 else:
@@ -1834,7 +1854,7 @@ def analysis():
                         else:
                             detail_button['bg']='lawn green'
                             for i in range (0,48):
-                                if(pos_result[i]<=30):
+                                if(pos_result[i]<=15):
                                     label[i]['text'] = str('%d'%t3_result[i]) 
                                     
                                 else:
