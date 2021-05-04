@@ -188,12 +188,14 @@ def process_image(image_name, start_point=(280,72), end_point=(513,391)):
         list_intensities[i].sort()
         #print("list_intensities",str(i),":",list_intensities[i])       
         #print("value", str(i), " : ", list_intensities[i][len(list_intensities[i])-1])
-        sum_intensities.append(sum(list_intensities[i][len(list_intensities[i])-400:]))
+        sum_intensities.append(sum(list_intensities[i][len(list_intensities[i])-280:]))
+        #sum_intensities.append(sum(list_intensities[i][len(list_intensities[i])-240:]))
         area[i]= cv2.contourArea(sorted_contours1[i])
         #result_list[i] = sum_intensities[i]
         tmp_list[i] = sum_intensities[i]/1000
-        result_list[i] = round(tmp_list[i])
-        #result_list[i] = round(round(tmp_list[i],1)*2)
+        #result_list[i] = round(tmp_list[i])
+        #result_list[i] = round(round(tmp_list[i],1)*1.5)
+        result_list[i] = round(tmp_list[i],1)
     
 #     tmp_list = list(range(48))
 #     #blur1_img = cv2.fastNlMeansDenoisingColored(image.copy(),None,9,9,7,19) 
@@ -268,11 +270,11 @@ def process_image(image_name, start_point=(280,72), end_point=(513,391)):
 
     for i in range(len(sorted_contours1)):
         if ((i!=0) and ((i+1)%6==0)):
-            print('%d' %(result_list[i]))
-            #print(result_list[i])
+            #print('%d' %(result_list[i]))
+            print('%.1f'%(result_list[i]))
         else:
-            print('%d' % (result_list[i]), end = ' | ')
-            #print(result_list[i], end = ' | ')
+            #print('%d' % (result_list[i]), end = ' | ')
+            print('%.1f'%(result_list[i]), end = ' | ')
 
     blurori_img = cv2.GaussianBlur(image.copy(), (25,25), 0)
     global thr3l_set
